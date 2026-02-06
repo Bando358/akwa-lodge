@@ -16,13 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
-
-interface UploadedFile {
-  url: string;
-  name: string;
-  type: string;
-  size: number;
-}
+import { useUploadThing } from "@/lib/uploadthing-client";
 
 interface ImageUploadProps {
   value: string | string[];
@@ -36,6 +30,7 @@ interface ImageUploadProps {
   previewClassName?: string;
   maxImageSize?: number; // en MB
   maxVideoSize?: number; // en MB
+  endpoint?: "chambreImage" | "galerieImage" | "generalImage";
 }
 
 export function ImageUpload({
@@ -50,6 +45,7 @@ export function ImageUpload({
   previewClassName,
   maxImageSize = 10,
   maxVideoSize = 50,
+  endpoint = "generalImage",
 }: ImageUploadProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -58,38 +54,11 @@ export function ImageUpload({
   // Normaliser la valeur en tableau
   const files = Array.isArray(value) ? value : value ? [value] : [];
 
-  const uploadFiles = async (filesToUpload: File[]) => {
-    setIsUploading(true);
-    setUploadProgress(0);
-    setError(null);
-
-    try {
-      const formData = new FormData();
-      filesToUpload.forEach((file) => {
-        formData.append("files", file);
-      });
-
-      // Simuler la progression (car fetch ne supporte pas nativement)
-      const progressInterval = setInterval(() => {
-        setUploadProgress((prev) => Math.min(prev + 10, 90));
-      }, 200);
-
-      const response = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
-      });
-
-      clearInterval(progressInterval);
-      setUploadProgress(100);
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || "Erreur lors de l'upload");
-      }
-
-      if (result.success && result.files) {
-        const urls = result.files.map((f: UploadedFile) => f.url);
+  // Hook Uploadthing
+  const { startUpload } = useUploadThing(endpoint, {
+    onClientUploadComplete: (res) => {
+      if (res) {
+        const urls = res.map((file) => file.ufsUrl || file.url);
 
         if (multiple) {
           onChange([...files, ...urls]);
@@ -98,20 +67,34 @@ export function ImageUpload({
         }
 
         toast.success(
-          `${result.files.length} fichier${result.files.length > 1 ? "s" : ""} uploadé${
-            result.files.length > 1 ? "s" : ""
-          } avec succès`
+          `${res.length} fichier${res.length > 1 ? "s" : ""} upload${res.length > 1 ? "s" : ""} avec succs`
         );
-
-        if (result.errors && result.errors.length > 0) {
-          result.errors.forEach((err: string) => toast.error(err));
-        }
       }
+      setIsUploading(false);
+      setUploadProgress(100);
+    },
+    onUploadError: (error) => {
+      setError(error.message);
+      toast.error(`Erreur: ${error.message}`);
+      setIsUploading(false);
+      setUploadProgress(0);
+    },
+    onUploadProgress: (progress) => {
+      setUploadProgress(progress);
+    },
+  });
+
+  const uploadFiles = async (filesToUpload: File[]) => {
+    setIsUploading(true);
+    setUploadProgress(0);
+    setError(null);
+
+    try {
+      await startUpload(filesToUpload);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Erreur d'upload";
       setError(errorMessage);
       toast.error(errorMessage);
-    } finally {
       setIsUploading(false);
       setUploadProgress(0);
     }
@@ -134,7 +117,7 @@ export function ImageUpload({
         return;
       }
 
-      // Vérifier les tailles
+      // Vrifier les tailles
       const validFiles = filesToUpload.filter((file) => {
         const isVideo = file.type.startsWith("video/");
         const maxSize = (isVideo ? maxVideoSize : maxImageSize) * 1024 * 1024;
@@ -170,18 +153,9 @@ export function ImageUpload({
     multiple,
   });
 
-  const removeFile = async (urlToRemove: string) => {
-    // Supprimer côté serveur (Vercel Blob ou local)
-    try {
-      await fetch("/api/upload", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: urlToRemove }),
-      });
-    } catch (err) {
-      console.error("Erreur lors de la suppression:", err);
-    }
-
+  const removeFile = (urlToRemove: string) => {
+    // Note: Uploadthing ne supporte pas la suppression ct client
+    // Les fichiers restent sur Uploadthing mais sont retirs de l'interface
     if (multiple) {
       onChange(files.filter((url) => url !== urlToRemove));
     } else {
@@ -236,12 +210,12 @@ export function ImageUpload({
               <div className="text-center">
                 <p className="font-medium">
                   {isDragActive
-                    ? "Déposez les fichiers ici"
-                    : "Glissez-déposez ou cliquez pour sélectionner"}
+                    ? "Dposez les fichiers ici"
+                    : "Glissez-dposez ou cliquez pour slectionner"}
                 </p>
                 <p className="text-sm text-muted-foreground mt-1">
                   {acceptVideo
-                    ? `Images (max ${maxImageSize}MB) ou Vidéos (max ${maxVideoSize}MB)`
+                    ? `Images (max ${maxImageSize}MB) ou Vidos (max ${maxVideoSize}MB)`
                     : `PNG, JPG, GIF, WebP, SVG (max ${maxImageSize}MB)`}
                 </p>
                 {multiple && (
@@ -258,7 +232,7 @@ export function ImageUpload({
                 disabled={disabled}
               >
                 <Upload className="mr-2 h-4 w-4" />
-                Sélectionner
+                Slectionner
               </Button>
             </>
           )}
@@ -273,7 +247,7 @@ export function ImageUpload({
         </div>
       )}
 
-      {/* Prévisualisation des fichiers */}
+      {/* Prvisualisation des fichiers */}
       {showPreview && files.length > 0 && (
         <div
           className={cn(
@@ -330,7 +304,7 @@ export function ImageUpload({
                   {isVideo(url) ? (
                     <>
                       <Film className="h-3 w-3" />
-                      Vidéo
+                      Vido
                     </>
                   ) : (
                     <>
@@ -348,7 +322,7 @@ export function ImageUpload({
   );
 }
 
-// Composant simplifié pour upload unique avec aperçu
+// Composant simplifi pour upload unique avec aperu
 interface SingleImageUploadProps {
   value: string;
   onChange: (value: string) => void;
@@ -356,6 +330,7 @@ interface SingleImageUploadProps {
   className?: string;
   placeholder?: string;
   acceptVideo?: boolean;
+  endpoint?: "chambreImage" | "galerieImage" | "generalImage";
 }
 
 export function SingleImageUpload({
@@ -365,8 +340,23 @@ export function SingleImageUpload({
   className,
   placeholder = "Ajouter une image",
   acceptVideo = false,
+  endpoint = "generalImage",
 }: SingleImageUploadProps) {
   const [isUploading, setIsUploading] = useState(false);
+
+  const { startUpload } = useUploadThing(endpoint, {
+    onClientUploadComplete: (res) => {
+      if (res && res[0]) {
+        onChange(res[0].ufsUrl || res[0].url);
+        toast.success("Fichier upload avec succs");
+      }
+      setIsUploading(false);
+    },
+    onUploadError: (error) => {
+      toast.error(`Erreur: ${error.message}`);
+      setIsUploading(false);
+    },
+  });
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -375,42 +365,15 @@ export function SingleImageUpload({
     setIsUploading(true);
 
     try {
-      const formData = new FormData();
-      formData.append("files", file);
-
-      const response = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || "Erreur lors de l'upload");
-      }
-
-      if (result.success && result.files?.[0]) {
-        onChange(result.files[0].url);
-        toast.success("Fichier uploadé avec succès");
-      }
+      await startUpload([file]);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Erreur d'upload";
       toast.error(errorMessage);
-    } finally {
       setIsUploading(false);
     }
   };
 
-  const handleRemove = async () => {
-    try {
-      await fetch("/api/upload", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: value }),
-      });
-    } catch (err) {
-      console.error("Erreur lors de la suppression:", err);
-    }
+  const handleRemove = () => {
     onChange("");
   };
 
@@ -432,7 +395,7 @@ export function SingleImageUpload({
           ) : (
             <Image
               src={value}
-              alt="Image uploadée"
+              alt="Image uploade"
               fill
               className="object-cover"
             />
