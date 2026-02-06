@@ -116,6 +116,7 @@ export function ChambreDetailClient({ chambre }: ChambreDetailClientProps) {
           isOpen={showVideoDialog}
           onClose={handleCloseVideoDialog}
           title={`Découvrez nos ${chambre.type}s`}
+          backgroundImages={chambre.images.map((img) => img.url)}
         />
       )}
 
