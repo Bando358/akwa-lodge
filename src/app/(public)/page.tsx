@@ -2,6 +2,9 @@ import { getImages } from "@/lib/actions/images";
 import { getChambres } from "@/lib/actions/chambres";
 import { HomePageClient } from "./home-client";
 
+// Empêcher le cache statique pour que le shuffle s'exécute à chaque requête
+export const dynamic = "force-dynamic";
+
 // Fonction utilitaire pour mélanger un tableau (Fisher-Yates shuffle)
 function shuffleArray<T>(array: T[]): T[] {
   const shuffled = [...array];

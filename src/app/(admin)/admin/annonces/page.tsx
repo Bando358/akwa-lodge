@@ -1,4 +1,4 @@
-import { Megaphone, Image, Video, FileText, Clock, CheckCircle } from "lucide-react";
+import { Megaphone, Image as ImageIcon, Video, Clock, CheckCircle } from "lucide-react";
 import { getAnnonces, getAnnoncesStats } from "@/lib/actions/annonces";
 import {
   Card,
@@ -93,7 +93,7 @@ export default async function AnnoncesPage() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <Image className="h-4 w-4 text-blue-500" />
+              <ImageIcon className="h-4 w-4 text-blue-500" />
               Images
             </CardTitle>
           </CardHeader>

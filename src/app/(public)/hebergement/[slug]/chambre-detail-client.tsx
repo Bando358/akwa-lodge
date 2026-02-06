@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
@@ -73,27 +73,37 @@ export function ChambreDetailClient({ chambre }: ChambreDetailClientProps) {
 
   const openLightbox = (index: number) => {
     setSelectedImageIndex(index);
-    document.body.style.overflow = "hidden";
   };
 
-  const closeLightbox = () => {
+  const closeLightbox = useCallback(() => {
     setSelectedImageIndex(null);
-    document.body.style.overflow = "";
-  };
+  }, []);
 
-  const nextImage = () => {
-    if (selectedImageIndex !== null) {
-      setSelectedImageIndex((selectedImageIndex + 1) % chambre.images.length);
-    }
-  };
+  const nextImage = useCallback(() => {
+    setSelectedImageIndex((prev) =>
+      prev !== null ? (prev + 1) % chambre.images.length : null
+    );
+  }, [chambre.images.length]);
 
-  const prevImage = () => {
+  const prevImage = useCallback(() => {
+    setSelectedImageIndex((prev) =>
+      prev !== null
+        ? prev === 0 ? chambre.images.length - 1 : prev - 1
+        : null
+    );
+  }, [chambre.images.length]);
+
+  // Gérer overflow du body quand le lightbox est ouvert
+  useEffect(() => {
     if (selectedImageIndex !== null) {
-      setSelectedImageIndex(
-        selectedImageIndex === 0 ? chambre.images.length - 1 : selectedImageIndex - 1
-      );
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
     }
-  };
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [selectedImageIndex]);
 
   // Navigation clavier pour le lightbox
   useEffect(() => {
@@ -105,7 +115,7 @@ export function ChambreDetailClient({ chambre }: ChambreDetailClientProps) {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [selectedImageIndex]);
+  }, [selectedImageIndex, nextImage, prevImage, closeLightbox]);
 
   return (
     <>
@@ -116,7 +126,6 @@ export function ChambreDetailClient({ chambre }: ChambreDetailClientProps) {
           isOpen={showVideoDialog}
           onClose={handleCloseVideoDialog}
           title={`Découvrez nos ${chambre.type}s`}
-          backgroundImages={chambre.images.map((img) => img.url)}
         />
       )}
 

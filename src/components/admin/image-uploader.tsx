@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Upload, ImageIcon, Loader2 } from "lucide-react";
+import { X, ImageIcon, Loader2 } from "lucide-react";
 import { UploadDropzone } from "@/components/uploadthing";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -126,7 +126,7 @@ export function ImageUploader({
       {!canUploadMore && (
         <div className="flex items-center gap-2 text-muted-foreground text-sm p-4 bg-muted rounded-lg">
           <ImageIcon className="h-4 w-4" />
-          <span>Nombre maximum d'images atteint ({maxImages})</span>
+          <span>Nombre maximum d&apos;images atteint ({maxImages})</span>
         </div>
       )}
     </div>

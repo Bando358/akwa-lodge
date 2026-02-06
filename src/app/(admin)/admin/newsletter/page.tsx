@@ -60,6 +60,7 @@ export default function NewsletterPage() {
 
   useEffect(() => {
     loadData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchTerm]);
 
   async function loadData() {

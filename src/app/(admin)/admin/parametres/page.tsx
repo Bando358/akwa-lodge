@@ -28,7 +28,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { getSettings, setSettings, resetSettings, defaultSettings } from "@/lib/actions/settings";
+import { getSettings, setSettings, resetSettings } from "@/lib/actions/settings";
 
 export default function ParametresPage() {
   const [settings, setSettingsState] = useState<Record<string, string>>({});

@@ -123,6 +123,7 @@ export default function GaleriePage() {
 
   useEffect(() => {
     loadData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCategory]);
 
   async function loadData() {
@@ -651,7 +652,7 @@ export default function GaleriePage() {
       }}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Modifier l'image</DialogTitle>
+            <DialogTitle>Modifier l&apos;image</DialogTitle>
             <DialogDescription>
               Modifiez les informations de cette image
             </DialogDescription>
@@ -734,7 +735,7 @@ export default function GaleriePage() {
                   <div className="space-y-0.5">
                     <Label htmlFor="edit-featured">Image en vedette</Label>
                     <p className="text-sm text-muted-foreground">
-                      Les images en vedette apparaissent sur la page d'accueil
+                      Les images en vedette apparaissent sur la page d&apos;accueil
                     </p>
                   </div>
                   <Switch
@@ -829,7 +830,7 @@ export default function GaleriePage() {
               Verification des images
             </DialogTitle>
             <DialogDescription>
-              Resultat de la verification des URLs d'images
+              Resultat de la verification des URLs d&apos;images
             </DialogDescription>
           </DialogHeader>
           {invalidImagesData && (
@@ -871,7 +872,7 @@ export default function GaleriePage() {
                     ))}
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    Ces images ont des URLs qui ne pointent pas vers Uploadthing et ne s'afficheront pas correctement.
+                    Ces images ont des URLs qui ne pointent pas vers Uploadthing et ne s&apos;afficheront pas correctement.
                     Vous pouvez les supprimer et re-uploader de nouvelles images.
                   </p>
                 </div>
@@ -882,7 +883,7 @@ export default function GaleriePage() {
                   <CheckCircle className="mx-auto h-12 w-12 text-green-500" />
                   <p className="mt-4 text-lg font-medium">Toutes les images sont valides!</p>
                   <p className="text-sm text-muted-foreground">
-                    Aucune image avec une URL invalide n'a ete trouvee.
+                    Aucune image avec une URL invalide n&apos;a ete trouvee.
                   </p>
                 </div>
               )}

@@ -84,7 +84,7 @@ export function ImageUpload({
     },
   });
 
-  const uploadFiles = async (filesToUpload: File[]) => {
+  const uploadFiles = useCallback(async (filesToUpload: File[]) => {
     setIsUploading(true);
     setUploadProgress(0);
     setError(null);
@@ -98,7 +98,7 @@ export function ImageUpload({
       setIsUploading(false);
       setUploadProgress(0);
     }
-  };
+  }, [startUpload]);
 
   const onDrop = useCallback(
     async (acceptedFiles: File[]) => {
@@ -135,7 +135,7 @@ export function ImageUpload({
         await uploadFiles(validFiles);
       }
     },
-    [disabled, files.length, maxFiles, multiple, maxImageSize, maxVideoSize]
+    [disabled, files.length, maxFiles, multiple, maxImageSize, maxVideoSize, uploadFiles]
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({

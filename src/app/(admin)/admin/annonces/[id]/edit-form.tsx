@@ -6,7 +6,7 @@ import Link from "next/link";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import { ArrowLeft, Loader2, Save, Megaphone, Image, Video, FileText } from "lucide-react";
+import { ArrowLeft, Loader2, Save, Megaphone, Image as ImageIcon, Video, FileText } from "lucide-react";
 import { toast } from "sonner";
 // Types correspondant au schema Prisma
 import { Button } from "@/components/ui/button";
@@ -249,7 +249,7 @@ export function EditAnnonceForm({ annonce }: EditAnnonceFormProps) {
                             <div className="flex items-center space-x-2">
                               <RadioGroupItem value="IMAGE" id="image" />
                               <label htmlFor="image" className="flex items-center gap-2 cursor-pointer">
-                                <Image className="h-4 w-4" />
+                                <ImageIcon className="h-4 w-4" />
                                 Image
                               </label>
                             </div>

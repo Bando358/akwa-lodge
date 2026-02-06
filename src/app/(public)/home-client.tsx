@@ -205,7 +205,7 @@ export function HomePageClient({
   featuredRooms,
   introImages,
 }: HomePageClientProps) {
-  // Les images sont déjà mélangées côté serveur
+  // Démarrage à l'index 0 (l'ordre est déjà mélangé côté serveur via shuffleArray)
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [introImageIndex, setIntroImageIndex] = useState(0);
 

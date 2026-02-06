@@ -332,7 +332,8 @@ export async function duplicateAnnonce(id: string) {
       return { success: false, error: "Annonce non trouvée" };
     }
 
-    const { id: _, createdAt, updatedAt, ...annonceData } = annonce;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { id: _id, createdAt: _createdAt, updatedAt: _updatedAt, ...annonceData } = annonce;
 
     const newAnnonce = await prisma.annonce.create({
       data: {

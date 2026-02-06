@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 
 // Schéma de validation pour les paramètres
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const settingSchema = z.object({
   key: z.string().min(1, "La clé est requise"),
   value: z.string(),
@@ -14,6 +15,7 @@ const settingSchema = z.object({
   description: z.string().optional().nullable(),
 });
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 type SettingInput = z.infer<typeof settingSchema>;
 
 // Paramètres par défaut du site

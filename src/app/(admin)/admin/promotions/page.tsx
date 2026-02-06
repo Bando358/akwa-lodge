@@ -1,4 +1,4 @@
-import { Percent, Tag, Clock, CheckCircle, Gift } from "lucide-react";
+import { Percent, Tag, Clock, CheckCircle } from "lucide-react";
 import { getPromotions, getPromotionsStats } from "@/lib/actions/promotions";
 import {
   Card,

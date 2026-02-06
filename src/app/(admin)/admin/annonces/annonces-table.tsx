@@ -92,6 +92,7 @@ const mediaTypeLabels = {
   VIDEO: "Vidéo",
 };
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const cibleLabels: Record<AnnonceCible, string> = {
   GENERAL: "Général",
   HEBERGEMENT: "Hébergement",

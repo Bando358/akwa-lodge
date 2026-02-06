@@ -1,4 +1,5 @@
 import { auth } from "@/lib/auth";
+import Link from "next/link";
 import {
   BedDouble,
   CalendarCheck,
@@ -7,7 +8,6 @@ import {
   Users,
   Clock,
   CheckCircle,
-  AlertCircle,
 } from "lucide-react";
 import {
   Card,
@@ -247,7 +247,7 @@ export default async function AdminDashboardPage() {
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <a
+            <Link
               href="/admin/chambres/nouveau"
               className="flex items-center gap-3 rounded-lg border p-4 transition-colors hover:bg-muted"
             >
@@ -258,8 +258,8 @@ export default async function AdminDashboardPage() {
                   Créer un nouvel hébergement
                 </p>
               </div>
-            </a>
-            <a
+            </Link>
+            <Link
               href="/admin/reservations"
               className="flex items-center gap-3 rounded-lg border p-4 transition-colors hover:bg-muted"
             >
@@ -270,8 +270,8 @@ export default async function AdminDashboardPage() {
                   Voir toutes les demandes
                 </p>
               </div>
-            </a>
-            <a
+            </Link>
+            <Link
               href="/admin/contacts"
               className="flex items-center gap-3 rounded-lg border p-4 transition-colors hover:bg-muted"
             >
@@ -282,8 +282,8 @@ export default async function AdminDashboardPage() {
                   8 messages non lus
                 </p>
               </div>
-            </a>
-            <a
+            </Link>
+            <Link
               href="/admin/galerie"
               className="flex items-center gap-3 rounded-lg border p-4 transition-colors hover:bg-muted"
             >
@@ -294,7 +294,7 @@ export default async function AdminDashboardPage() {
                   Photos et médias
                 </p>
               </div>
-            </a>
+            </Link>
           </div>
         </CardContent>
       </Card>

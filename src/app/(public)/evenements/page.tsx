@@ -9,7 +9,6 @@ import {
   Calendar,
   MapPin,
   Music,
-  Camera,
   Utensils,
   ArrowRight,
   CheckCircle,

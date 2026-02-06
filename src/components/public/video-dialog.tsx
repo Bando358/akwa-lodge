@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Volume2, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -11,12 +10,10 @@ interface VideoDialogProps {
   isOpen: boolean;
   onClose: () => void;
   title?: string;
-  backgroundImages?: string[];
 }
 
-export function VideoDialog({ videoUrl, isOpen, onClose, title, backgroundImages }: VideoDialogProps) {
+export function VideoDialog({ videoUrl, isOpen, onClose, title }: VideoDialogProps) {
   const [isMuted, setIsMuted] = useState(true);
-  const [bgIndex, setBgIndex] = useState(0);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   // Détecter si c'est une URL YouTube
@@ -36,20 +33,6 @@ export function VideoDialog({ videoUrl, isOpen, onClose, title, backgroundImages
         // Autoplay bloqué, l'utilisateur devra cliquer
       });
     }
-  }, [isOpen]);
-
-  // Diaporama arrière-plan toutes les 20 secondes
-  useEffect(() => {
-    if (!isOpen || !backgroundImages || backgroundImages.length <= 1) return;
-    const interval = setInterval(() => {
-      setBgIndex((prev) => (prev + 1) % backgroundImages.length);
-    }, 20000);
-    return () => clearInterval(interval);
-  }, [isOpen, backgroundImages]);
-
-  // Reset bg index quand le dialog s'ouvre
-  useEffect(() => {
-    if (isOpen) setBgIndex(0);
   }, [isOpen]);
 
   // Fermer avec Escape
@@ -76,41 +59,14 @@ export function VideoDialog({ videoUrl, isOpen, onClose, title, backgroundImages
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
         >
-          {/* Backdrop avec images en arrière-plan */}
+          {/* Backdrop transparent - le site est visible en arrière-plan */}
           <motion.div
-            className="absolute inset-0"
+            className="absolute inset-0 bg-black/30 backdrop-blur-xs"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-          >
-            {backgroundImages && backgroundImages.length > 0 ? (
-              <>
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={bgIndex}
-                    className="absolute inset-0"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 1.2, ease: "easeInOut" }}
-                  >
-                    <Image
-                      src={backgroundImages[bgIndex]}
-                      alt=""
-                      fill
-                      className="object-cover"
-                      sizes="100vw"
-                    />
-                  </motion.div>
-                </AnimatePresence>
-                {/* Overlay sombre pour la lisibilité */}
-                <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
-              </>
-            ) : (
-              <div className="absolute inset-0 bg-black/90 backdrop-blur-sm" />
-            )}
-          </motion.div>
+          />
 
           {/* Dialog Content */}
           <motion.div

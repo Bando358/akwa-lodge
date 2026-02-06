@@ -139,6 +139,7 @@ export function ChambresTable({ chambres }: ChambresTableProps) {
               <TableCell>
                 <div className="h-12 w-16 overflow-hidden rounded-md bg-muted">
                   {chambre.images[0] ? (
+                    // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={chambre.images[0].url}
                       alt={chambre.nom}
