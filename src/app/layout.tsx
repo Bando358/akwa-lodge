@@ -17,6 +17,7 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://akwaluxurylodge.com"),
   title: {
     default: "Akwa Luxury Lodge | Hôtel de luxe à Jacqueville, Côte d'Ivoire",
     template: "%s | Akwa Luxury Lodge",
