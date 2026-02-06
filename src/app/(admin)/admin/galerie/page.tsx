@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { Images, Plus, Trash2, Star, StarOff, Loader2, Upload, Pencil, Eye } from "lucide-react";
+import { Images, Plus, Trash2, Star, StarOff, Loader2, Upload, Pencil, Eye, AlertTriangle, CheckCircle, Trash } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -52,6 +52,8 @@ import {
   createImages,
   updateImage,
   getImageCategories,
+  checkInvalidImages,
+  cleanupInvalidImages,
 } from "@/lib/actions/images";
 
 type ImageType = {
@@ -109,6 +111,15 @@ export default function GaleriePage() {
     categorie: "",
     isFeatured: false,
   });
+  const [showCleanupDialog, setShowCleanupDialog] = useState(false);
+  const [invalidImagesData, setInvalidImagesData] = useState<{
+    total: number;
+    valid: number;
+    invalid: number;
+    invalidImages: Array<{ id: string; url: string; categorie: string | null; titre: string | null }>;
+  } | null>(null);
+  const [isCheckingImages, setIsCheckingImages] = useState(false);
+  const [isCleaningUp, setIsCleaningUp] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -282,6 +293,42 @@ export default function GaleriePage() {
     });
   };
 
+  const handleCheckInvalidImages = async () => {
+    setIsCheckingImages(true);
+    try {
+      const result = await checkInvalidImages();
+      if (result.success && result.data) {
+        setInvalidImagesData(result.data);
+        setShowCleanupDialog(true);
+      } else {
+        toast.error(result.error || "Erreur lors de la verification");
+      }
+    } catch {
+      toast.error("Une erreur est survenue");
+    } finally {
+      setIsCheckingImages(false);
+    }
+  };
+
+  const handleCleanupImages = async () => {
+    setIsCleaningUp(true);
+    try {
+      const result = await cleanupInvalidImages();
+      if (result.success) {
+        toast.success(result.message || "Nettoyage termine");
+        setShowCleanupDialog(false);
+        setInvalidImagesData(null);
+        loadData();
+      } else {
+        toast.error(result.error || "Erreur lors du nettoyage");
+      }
+    } catch {
+      toast.error("Une erreur est survenue");
+    } finally {
+      setIsCleaningUp(false);
+    }
+  };
+
   return (
     <div className="p-6 space-y-6">
       {/* En-tete */}
@@ -295,6 +342,19 @@ export default function GaleriePage() {
             Gerez les images de votre etablissement
           </p>
         </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={handleCheckInvalidImages}
+            disabled={isCheckingImages}
+          >
+            {isCheckingImages ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <AlertTriangle className="mr-2 h-4 w-4" />
+            )}
+            Verifier les URLs
+          </Button>
         <Dialog open={showAddDialog} onOpenChange={(open) => {
           if (!open) handleCloseDialog();
           else setShowAddDialog(true);
@@ -382,6 +442,7 @@ export default function GaleriePage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       {/* Statistiques */}
@@ -751,6 +812,100 @@ export default function GaleriePage() {
               <Pencil className="mr-2 h-4 w-4" />
               Modifier
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog de nettoyage des images invalides */}
+      <Dialog open={showCleanupDialog} onOpenChange={setShowCleanupDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {invalidImagesData && invalidImagesData.invalid > 0 ? (
+                <AlertTriangle className="h-5 w-5 text-yellow-500" />
+              ) : (
+                <CheckCircle className="h-5 w-5 text-green-500" />
+              )}
+              Verification des images
+            </DialogTitle>
+            <DialogDescription>
+              Resultat de la verification des URLs d'images
+            </DialogDescription>
+          </DialogHeader>
+          {invalidImagesData && (
+            <div className="space-y-4 py-4">
+              {/* Statistiques */}
+              <div className="grid grid-cols-3 gap-4">
+                <div className="text-center p-4 bg-muted rounded-lg">
+                  <div className="text-2xl font-bold">{invalidImagesData.total}</div>
+                  <div className="text-sm text-muted-foreground">Total</div>
+                </div>
+                <div className="text-center p-4 bg-green-50 rounded-lg">
+                  <div className="text-2xl font-bold text-green-600">{invalidImagesData.valid}</div>
+                  <div className="text-sm text-muted-foreground">Valides</div>
+                </div>
+                <div className="text-center p-4 bg-red-50 rounded-lg">
+                  <div className="text-2xl font-bold text-red-600">{invalidImagesData.invalid}</div>
+                  <div className="text-sm text-muted-foreground">Invalides</div>
+                </div>
+              </div>
+
+              {/* Liste des images invalides */}
+              {invalidImagesData.invalid > 0 && (
+                <div className="space-y-2">
+                  <h4 className="font-medium">Images avec URLs invalides:</h4>
+                  <div className="max-h-60 overflow-y-auto space-y-2 border rounded-lg p-2">
+                    {invalidImagesData.invalidImages.map((img) => (
+                      <div key={img.id} className="flex items-start gap-2 p-2 bg-red-50 rounded text-sm">
+                        <AlertTriangle className="h-4 w-4 text-red-500 mt-0.5 shrink-0" />
+                        <div className="min-w-0 flex-1">
+                          <div className="font-medium truncate">{img.titre || "Sans titre"}</div>
+                          <div className="text-xs text-muted-foreground truncate">{img.url}</div>
+                          {img.categorie && (
+                            <Badge variant="outline" className="mt-1 text-xs">
+                              {getCategoryLabel(img.categorie)}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Ces images ont des URLs qui ne pointent pas vers Uploadthing et ne s'afficheront pas correctement.
+                    Vous pouvez les supprimer et re-uploader de nouvelles images.
+                  </p>
+                </div>
+              )}
+
+              {invalidImagesData.invalid === 0 && (
+                <div className="text-center py-8">
+                  <CheckCircle className="mx-auto h-12 w-12 text-green-500" />
+                  <p className="mt-4 text-lg font-medium">Toutes les images sont valides!</p>
+                  <p className="text-sm text-muted-foreground">
+                    Aucune image avec une URL invalide n'a ete trouvee.
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCleanupDialog(false)}>
+              Fermer
+            </Button>
+            {invalidImagesData && invalidImagesData.invalid > 0 && (
+              <Button
+                variant="destructive"
+                onClick={handleCleanupImages}
+                disabled={isCleaningUp}
+              >
+                {isCleaningUp ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Trash className="mr-2 h-4 w-4" />
+                )}
+                Supprimer les invalides ({invalidImagesData.invalid})
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

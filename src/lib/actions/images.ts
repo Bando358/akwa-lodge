@@ -298,3 +298,110 @@ export async function getImageCategories() {
     return { success: false, error: "Erreur lors de la récupération des catégories" };
   }
 }
+
+// Vérifier si une URL est valide (Uploadthing ou chemin local valide)
+function isValidImageUrl(url: string): boolean {
+  // URLs Uploadthing valides
+  const uploadthingPatterns = [
+    /^https:\/\/utfs\.io\//,
+    /^https:\/\/.*\.ufs\.sh\//,
+    /^https:\/\/.*\.uploadthing\.com\//,
+    /^https:\/\/uploadthing\.com\//,
+    /^https:\/\/uploadthing-prod\.s3\.us-west-2\.amazonaws\.com\//,
+  ];
+
+  // Vérifier si l'URL correspond à un pattern Uploadthing
+  for (const pattern of uploadthingPatterns) {
+    if (pattern.test(url)) {
+      return true;
+    }
+  }
+
+  // Les chemins locaux (/uploads/) ne sont plus valides en production
+  // mais on les garde pour le développement local
+  if (url.startsWith("/uploads/") && process.env.NODE_ENV === "development") {
+    return true;
+  }
+
+  return false;
+}
+
+// Nettoyer les images avec des URLs invalides
+export async function cleanupInvalidImages() {
+  try {
+    const allImages = await prisma.image.findMany({
+      select: {
+        id: true,
+        url: true,
+        categorie: true,
+      },
+    });
+
+    const invalidImages = allImages.filter((img) => !isValidImageUrl(img.url));
+
+    if (invalidImages.length === 0) {
+      return {
+        success: true,
+        message: "Aucune image invalide trouvée",
+        deletedCount: 0,
+        invalidImages: []
+      };
+    }
+
+    // Supprimer les images invalides
+    await prisma.image.deleteMany({
+      where: {
+        id: { in: invalidImages.map((img) => img.id) },
+      },
+    });
+
+    revalidatePath("/admin/galerie");
+    revalidatePath("/galerie");
+    revalidatePath("/");
+
+    return {
+      success: true,
+      message: `${invalidImages.length} image(s) invalide(s) supprimée(s)`,
+      deletedCount: invalidImages.length,
+      invalidImages: invalidImages.map((img) => ({ id: img.id, url: img.url, categorie: img.categorie }))
+    };
+  } catch (error) {
+    console.error("Erreur lors du nettoyage des images:", error);
+    return { success: false, error: "Erreur lors du nettoyage des images" };
+  }
+}
+
+// Vérifier les images invalides sans les supprimer
+export async function checkInvalidImages() {
+  try {
+    const allImages = await prisma.image.findMany({
+      select: {
+        id: true,
+        url: true,
+        categorie: true,
+        titre: true,
+      },
+    });
+
+    const invalidImages = allImages.filter((img) => !isValidImageUrl(img.url));
+    const validImages = allImages.filter((img) => isValidImageUrl(img.url));
+
+    return {
+      success: true,
+      data: {
+        total: allImages.length,
+        valid: validImages.length,
+        invalid: invalidImages.length,
+        invalidImages: invalidImages.map((img) => ({
+          id: img.id,
+          url: img.url,
+          categorie: img.categorie,
+          titre: img.titre
+        }))
+      }
+    };
+  } catch (error) {
+    console.error("Erreur lors de la vérification des images:", error);
+    return { success: false, error: "Erreur lors de la vérification des images" };
+  }
+}
