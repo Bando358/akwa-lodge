@@ -119,6 +119,7 @@ export async function createImage(data: ImageInput) {
 
     revalidatePath("/admin/galerie");
     revalidatePath("/galerie");
+    revalidatePath("/"); // Revalidate homepage for banner images
     if (data.chambreId) {
       revalidatePath("/admin/chambres");
       revalidatePath("/hebergement");
@@ -151,6 +152,7 @@ export async function createImages(images: ImageInput[]) {
 
     revalidatePath("/admin/galerie");
     revalidatePath("/galerie");
+    revalidatePath("/"); // Revalidate homepage for banner images
 
     return { success: true, data: createdImages };
   } catch (error) {
@@ -180,6 +182,7 @@ export async function updateImage(id: string, data: Partial<ImageInput>) {
 
     revalidatePath("/admin/galerie");
     revalidatePath("/galerie");
+    revalidatePath("/"); // Revalidate homepage for banner images
 
     return { success: true, data: image };
   } catch (error) {
@@ -197,6 +200,7 @@ export async function deleteImage(id: string) {
 
     revalidatePath("/admin/galerie");
     revalidatePath("/galerie");
+    revalidatePath("/"); // Revalidate homepage
 
     return { success: true };
   } catch (error) {
@@ -214,6 +218,7 @@ export async function deleteImages(ids: string[]) {
 
     revalidatePath("/admin/galerie");
     revalidatePath("/galerie");
+    revalidatePath("/"); // Revalidate homepage
 
     return { success: true };
   } catch (error) {

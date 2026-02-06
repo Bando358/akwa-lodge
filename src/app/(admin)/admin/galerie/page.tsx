@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { Images, Plus, Trash2, Star, StarOff, Loader2, Upload } from "lucide-react";
+import { Images, Plus, Trash2, Star, StarOff, Loader2, Upload, Pencil, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -42,12 +42,15 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import { ImageUpload } from "@/components/admin/image-upload";
 import {
   getImages,
   deleteImages,
   toggleImageFeatured,
   createImages,
+  updateImage,
   getImageCategories,
 } from "@/lib/actions/images";
 
@@ -56,28 +59,28 @@ type ImageType = {
   url: string;
   alt: string | null;
   titre: string | null;
+  description: string | null;
   categorie: string | null;
   isFeatured: boolean;
   createdAt: Date;
 };
 
-// Catégories prédéfinies pour les images
-// Catégories prédéfinies pour les images
+// Categories predefinies pour les images
 const IMAGE_CATEGORIES = [
   { value: "accueil", label: "Page d'accueil" },
   { value: "chambres", label: "Chambres" },
   { value: "restaurant", label: "Restaurant" },
   { value: "piscine", label: "Piscine" },
-  { value: "spa", label: "Spa & Bien-être" },
-  { value: "evenements", label: "Événements" },
-  { value: "conferences", label: "Salles de conférence" },
-  { value: "exterieur", label: "Extérieur & Jardins" },
+  { value: "spa", label: "Spa & Bien-etre" },
+  { value: "evenements", label: "Evenements" },
+  { value: "conferences", label: "Salles de conference" },
+  { value: "exterieur", label: "Exterieur & Jardins" },
   { value: "plage", label: "Plage & Lagune" },
-  { value: "activites", label: "Activités" },
+  { value: "activites", label: "Activites" },
   { value: "autre", label: "Autre" },
 ] as const;
 
-// Fonction pour obtenir le label d'une catégorie
+// Fonction pour obtenir le label d'une categorie
 function getCategoryLabel(value: string | null): string {
   if (!value) return "";
   const cat = IMAGE_CATEGORIES.find((c) => c.value === value);
@@ -92,9 +95,20 @@ export default function GaleriePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showPreviewDialog, setShowPreviewDialog] = useState(false);
+  const [editingImage, setEditingImage] = useState<ImageType | null>(null);
+  const [previewImage, setPreviewImage] = useState<ImageType | null>(null);
   const [uploadedUrls, setUploadedUrls] = useState<string[]>([]);
   const [newImageMeta, setNewImageMeta] = useState({ alt: "", categorie: "" });
   const [isSaving, setIsSaving] = useState(false);
+  const [editForm, setEditForm] = useState({
+    alt: "",
+    titre: "",
+    description: "",
+    categorie: "",
+    isFeatured: false,
+  });
 
   useEffect(() => {
     loadData();
@@ -141,7 +155,7 @@ export default function GaleriePage() {
     try {
       const result = await deleteImages(selectedImages);
       if (result.success) {
-        toast.success(`${selectedImages.length} image(s) supprimée(s)`);
+        toast.success(`${selectedImages.length} image(s) supprimee(s)`);
         setSelectedImages([]);
         loadData();
       } else {
@@ -160,7 +174,7 @@ export default function GaleriePage() {
         toast.success(
           result.data?.isFeatured
             ? "Image mise en vedette"
-            : "Image retirée des vedettes"
+            : "Image retiree des vedettes"
         );
         loadData();
       } else {
@@ -173,7 +187,7 @@ export default function GaleriePage() {
 
   const handleSaveImages = async () => {
     if (uploadedUrls.length === 0) {
-      toast.error("Aucune image à ajouter");
+      toast.error("Aucune image a ajouter");
       return;
     }
 
@@ -190,7 +204,7 @@ export default function GaleriePage() {
       const result = await createImages(imagesToCreate);
 
       if (result.success) {
-        toast.success(`${uploadedUrls.length} image(s) ajoutée(s) avec succès`);
+        toast.success(`${uploadedUrls.length} image(s) ajoutee(s) avec succes`);
         setUploadedUrls([]);
         setNewImageMeta({ alt: "", categorie: "" });
         setShowAddDialog(false);
@@ -211,9 +225,66 @@ export default function GaleriePage() {
     setNewImageMeta({ alt: "", categorie: "" });
   };
 
+  const handleEditImage = (image: ImageType) => {
+    setEditingImage(image);
+    setEditForm({
+      alt: image.alt || "",
+      titre: image.titre || "",
+      description: image.description || "",
+      categorie: image.categorie || "",
+      isFeatured: image.isFeatured,
+    });
+    setShowEditDialog(true);
+  };
+
+  const handlePreviewImage = (image: ImageType) => {
+    setPreviewImage(image);
+    setShowPreviewDialog(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingImage) return;
+
+    setIsSaving(true);
+    try {
+      const result = await updateImage(editingImage.id, {
+        alt: editForm.alt || null,
+        titre: editForm.titre || null,
+        description: editForm.description || null,
+        categorie: editForm.categorie || null,
+        isFeatured: editForm.isFeatured,
+      });
+
+      if (result.success) {
+        toast.success("Image mise a jour avec succes");
+        setShowEditDialog(false);
+        setEditingImage(null);
+        loadData();
+      } else {
+        toast.error(result.error || "Erreur lors de la mise a jour");
+      }
+    } catch {
+      toast.error("Une erreur est survenue");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleCloseEditDialog = () => {
+    setShowEditDialog(false);
+    setEditingImage(null);
+    setEditForm({
+      alt: "",
+      titre: "",
+      description: "",
+      categorie: "",
+      isFeatured: false,
+    });
+  };
+
   return (
     <div className="p-6 space-y-6">
-      {/* En-tête */}
+      {/* En-tete */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-serif font-bold flex items-center gap-3">
@@ -221,7 +292,7 @@ export default function GaleriePage() {
             Galerie
           </h1>
           <p className="mt-1 text-muted-foreground">
-            Gérez les images de votre établissement
+            Gerez les images de votre etablissement
           </p>
         </div>
         <Dialog open={showAddDialog} onOpenChange={(open) => {
@@ -238,7 +309,7 @@ export default function GaleriePage() {
             <DialogHeader>
               <DialogTitle>Ajouter des images</DialogTitle>
               <DialogDescription>
-                Uploadez vos images directement. Vous pouvez en ajouter plusieurs à la fois.
+                Uploadez vos images directement. Vous pouvez en ajouter plusieurs a la fois.
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-6 py-4">
@@ -248,13 +319,14 @@ export default function GaleriePage() {
                 onChange={(urls) => setUploadedUrls(urls as string[])}
                 multiple
                 maxFiles={20}
+                endpoint="galerieImage"
               />
 
-              {/* Métadonnées communes */}
+              {/* Metadonnees communes */}
               {uploadedUrls.length > 0 && (
                 <div className="space-y-4 pt-4 border-t">
                   <p className="text-sm text-muted-foreground">
-                    Ces informations seront appliquées à toutes les images uploadées
+                    Ces informations seront appliquees a toutes les images uploadees
                   </p>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
@@ -269,7 +341,7 @@ export default function GaleriePage() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="categorie">Catégorie</Label>
+                      <Label htmlFor="categorie">Categorie</Label>
                       <Select
                         value={newImageMeta.categorie}
                         onValueChange={(value) =>
@@ -277,7 +349,7 @@ export default function GaleriePage() {
                         }
                       >
                         <SelectTrigger id="categorie">
-                          <SelectValue placeholder="Sélectionner une catégorie" />
+                          <SelectValue placeholder="Selectionner une categorie" />
                         </SelectTrigger>
                         <SelectContent>
                           {IMAGE_CATEGORIES.map((cat) => (
@@ -339,7 +411,7 @@ export default function GaleriePage() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Catégories
+              Categories
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -356,8 +428,8 @@ export default function GaleriePage() {
               <CardTitle>Images</CardTitle>
               <CardDescription>
                 {selectedImages.length > 0
-                  ? `${selectedImages.length} image(s) sélectionnée(s)`
-                  : "Sélectionnez des images pour les modifier"}
+                  ? `${selectedImages.length} image(s) selectionnee(s)`
+                  : "Selectionnez des images pour les modifier"}
               </CardDescription>
             </div>
             <div className="flex items-center gap-4">
@@ -366,10 +438,10 @@ export default function GaleriePage() {
                 onValueChange={setSelectedCategory}
               >
                 <SelectTrigger className="w-50">
-                  <SelectValue placeholder="Catégorie" />
+                  <SelectValue placeholder="Categorie" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Toutes les catégories</SelectItem>
+                  <SelectItem value="all">Toutes les categories</SelectItem>
                   {IMAGE_CATEGORIES.map((cat) => (
                     <SelectItem key={cat.value} value={cat.value}>
                       {cat.label}
@@ -403,7 +475,7 @@ export default function GaleriePage() {
                   onCheckedChange={handleSelectAll}
                 />
                 <span className="text-sm text-muted-foreground">
-                  Tout sélectionner
+                  Tout selectionner
                 </span>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
@@ -437,7 +509,24 @@ export default function GaleriePage() {
                       <Button
                         variant="secondary"
                         size="icon"
+                        onClick={() => handlePreviewImage(image)}
+                        title="Voir"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        size="icon"
+                        onClick={() => handleEditImage(image)}
+                        title="Modifier"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        size="icon"
                         onClick={() => handleToggleFeatured(image.id)}
+                        title={image.isFeatured ? "Retirer des vedettes" : "Mettre en vedette"}
                       >
                         {image.isFeatured ? (
                           <StarOff className="h-4 w-4" />
@@ -462,7 +551,7 @@ export default function GaleriePage() {
               <Images className="mx-auto h-12 w-12 text-muted-foreground/50" />
               <h3 className="mt-4 text-lg font-medium">Aucune image</h3>
               <p className="mt-2 text-sm text-muted-foreground">
-                Commencez par ajouter votre première image
+                Commencez par ajouter votre premiere image
               </p>
               <Button className="mt-4" onClick={() => setShowAddDialog(true)}>
                 <Upload className="mr-2 h-4 w-4" />
@@ -479,8 +568,8 @@ export default function GaleriePage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
             <AlertDialogDescription>
-              Êtes-vous sûr de vouloir supprimer {selectedImages.length} image(s) ?
-              Cette action est irréversible.
+              Etes-vous sur de vouloir supprimer {selectedImages.length} image(s) ?
+              Cette action est irreversible.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -494,6 +583,177 @@ export default function GaleriePage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Dialog d'edition d'image */}
+      <Dialog open={showEditDialog} onOpenChange={(open) => {
+        if (!open) handleCloseEditDialog();
+      }}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Modifier l'image</DialogTitle>
+            <DialogDescription>
+              Modifiez les informations de cette image
+            </DialogDescription>
+          </DialogHeader>
+          {editingImage && (
+            <div className="space-y-6 py-4">
+              {/* Apercu de l'image */}
+              <div className="relative aspect-video rounded-lg overflow-hidden bg-muted">
+                <Image
+                  src={editingImage.url}
+                  alt={editingImage.alt || "Image"}
+                  fill
+                  className="object-contain"
+                />
+              </div>
+
+              {/* Formulaire */}
+              <div className="grid gap-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-titre">Titre</Label>
+                    <Input
+                      id="edit-titre"
+                      placeholder="Titre de l'image"
+                      value={editForm.titre}
+                      onChange={(e) =>
+                        setEditForm({ ...editForm, titre: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-categorie">Categorie</Label>
+                    <Select
+                      value={editForm.categorie || "_none_"}
+                      onValueChange={(value) =>
+                        setEditForm({ ...editForm, categorie: value === "_none_" ? "" : value })
+                      }
+                    >
+                      <SelectTrigger id="edit-categorie">
+                        <SelectValue placeholder="Selectionner une categorie" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="_none_">Aucune categorie</SelectItem>
+                        {IMAGE_CATEGORIES.map((cat) => (
+                          <SelectItem key={cat.value} value={cat.value}>
+                            {cat.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="edit-alt">Texte alternatif (SEO)</Label>
+                  <Input
+                    id="edit-alt"
+                    placeholder="Description de l'image pour le SEO"
+                    value={editForm.alt}
+                    onChange={(e) =>
+                      setEditForm({ ...editForm, alt: e.target.value })
+                    }
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="edit-description">Description</Label>
+                  <Textarea
+                    id="edit-description"
+                    placeholder="Description detaillee de l'image"
+                    value={editForm.description}
+                    onChange={(e) =>
+                      setEditForm({ ...editForm, description: e.target.value })
+                    }
+                    rows={3}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between rounded-lg border p-4">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="edit-featured">Image en vedette</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Les images en vedette apparaissent sur la page d'accueil
+                    </p>
+                  </div>
+                  <Switch
+                    id="edit-featured"
+                    checked={editForm.isFeatured}
+                    onCheckedChange={(checked) =>
+                      setEditForm({ ...editForm, isFeatured: checked })
+                    }
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={handleCloseEditDialog}>
+              Annuler
+            </Button>
+            <Button onClick={handleSaveEdit} disabled={isSaving}>
+              {isSaving ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : null}
+              Enregistrer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog de preview */}
+      <Dialog open={showPreviewDialog} onOpenChange={setShowPreviewDialog}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>{previewImage?.titre || "Apercu de l'image"}</DialogTitle>
+            {previewImage?.description && (
+              <DialogDescription>{previewImage.description}</DialogDescription>
+            )}
+          </DialogHeader>
+          {previewImage && (
+            <div className="space-y-4">
+              <div className="relative aspect-video rounded-lg overflow-hidden bg-muted">
+                <Image
+                  src={previewImage.url}
+                  alt={previewImage.alt || "Image"}
+                  fill
+                  className="object-contain"
+                />
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {previewImage.categorie && (
+                  <Badge variant="secondary">
+                    {getCategoryLabel(previewImage.categorie)}
+                  </Badge>
+                )}
+                {previewImage.isFeatured && (
+                  <Badge className="bg-yellow-500">
+                    <Star className="h-3 w-3 mr-1 fill-white" />
+                    En vedette
+                  </Badge>
+                )}
+              </div>
+              {previewImage.alt && (
+                <p className="text-sm text-muted-foreground">
+                  <strong>Alt:</strong> {previewImage.alt}
+                </p>
+              )}
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowPreviewDialog(false)}>
+              Fermer
+            </Button>
+            <Button onClick={() => {
+              setShowPreviewDialog(false);
+              if (previewImage) handleEditImage(previewImage);
+            }}>
+              <Pencil className="mr-2 h-4 w-4" />
+              Modifier
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
