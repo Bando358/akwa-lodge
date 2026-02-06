@@ -462,7 +462,7 @@ export function HomePageClient({
                 </div>
                 {/* Stats overlay avec animation */}
                 <motion.div
-                  className="absolute -bottom-6 -left-6 bg-primary text-primary-foreground rounded-xl p-6 shadow-luxury"
+                  className="absolute -bottom-6 -left-6 bg-primary z-10 text-primary-foreground rounded-xl p-6 shadow-luxury"
                   initial={{ opacity: 0, scale: 0.8 }}
                   whileInView={{ opacity: 1, scale: 1 }}
                   viewport={{ once: true }}
