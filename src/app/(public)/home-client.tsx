@@ -42,13 +42,76 @@ type FeaturedRoom = {
   prix: number;
   capacite: number;
   superficie: number | null;
-  image: string | null;
+  images: string[];
   isFeatured: boolean;
+};
+
+// Type pour les images intro
+type IntroImage = {
+  url: string;
+  alt: string;
 };
 
 interface HomePageClientProps {
   initialBannerImages: BannerImage[];
   featuredRooms: FeaturedRoom[];
+  introImages: IntroImage[];
+}
+
+// Composant diaporama pour les cartes de chambres
+function RoomImageSlideshow({ images, alt }: { images: string[]; alt: string }) {
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  useEffect(() => {
+    if (images.length <= 1) return;
+    const interval = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % images.length);
+    }, 20000);
+    return () => clearInterval(interval);
+  }, [images.length]);
+
+  if (images.length === 0) {
+    return (
+      <div className="absolute inset-0 flex items-center justify-center">
+        <Palmtree className="h-16 w-16 text-primary/30" />
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={currentIndex}
+          className="absolute inset-0"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 1, ease: "easeInOut" }}
+        >
+          <Image
+            src={images[currentIndex]}
+            alt={alt}
+            fill
+            className="object-cover transition-transform duration-500 group-hover:scale-110"
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+          />
+        </motion.div>
+      </AnimatePresence>
+      {images.length > 1 && (
+        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 z-10 flex gap-1">
+          {images.map((_, index) => (
+            <span
+              key={index}
+              className={`block w-1.5 h-1.5 rounded-full transition-all duration-300 ${
+                index === currentIndex ? "bg-white w-4" : "bg-white/50"
+              }`}
+            />
+          ))}
+        </div>
+      )}
+    </>
+  );
 }
 
 // Services phares
@@ -134,11 +197,13 @@ const heroItemVariants = {
 export function HomePageClient({
   initialBannerImages,
   featuredRooms,
+  introImages,
 }: HomePageClientProps) {
   // Les images sont déjà mélangées côté serveur
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [introImageIndex, setIntroImageIndex] = useState(0);
 
-  // Rotation automatique des images toutes les 20 secondes
+  // Rotation automatique des images hero toutes les 20 secondes
   useEffect(() => {
     if (initialBannerImages.length <= 1) return;
 
@@ -148,6 +213,17 @@ export function HomePageClient({
 
     return () => clearInterval(interval);
   }, [initialBannerImages.length]);
+
+  // Rotation automatique des images intro toutes les 20 secondes
+  useEffect(() => {
+    if (introImages.length <= 1) return;
+
+    const interval = setInterval(() => {
+      setIntroImageIndex((prev) => (prev + 1) % introImages.length);
+    }, 20000);
+
+    return () => clearInterval(interval);
+  }, [introImages.length]);
 
   // Image courante
   const currentImage = initialBannerImages[currentImageIndex];
@@ -336,10 +412,47 @@ export function HomePageClient({
 
             <ScrollReveal variant="fadeLeft" delay={0.2}>
               <div className="relative">
-                <div className="aspect-[4/3] rounded-2xl overflow-hidden bg-gradient-to-br from-primary/20 to-secondary/20">
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <Palmtree className="h-24 w-24 text-primary/30" />
-                  </div>
+                <div className="aspect-[4/3] rounded-2xl overflow-hidden bg-gradient-to-br from-primary/20 to-secondary/20 relative">
+                  {introImages.length > 0 ? (
+                    <>
+                      <AnimatePresence mode="wait">
+                        <motion.div
+                          key={introImageIndex}
+                          className="absolute inset-0"
+                          initial={{ opacity: 0, scale: 1.05 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0 }}
+                          transition={{ duration: 1.2, ease: "easeInOut" }}
+                        >
+                          <Image
+                            src={introImages[introImageIndex].url}
+                            alt={introImages[introImageIndex].alt}
+                            fill
+                            className="object-cover"
+                            sizes="(max-width: 1024px) 100vw, 50vw"
+                          />
+                        </motion.div>
+                      </AnimatePresence>
+                      {introImages.length > 1 && (
+                        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 flex gap-1.5">
+                          {introImages.map((_, index) => (
+                            <span
+                              key={index}
+                              className={`block h-2 rounded-full transition-all duration-300 ${
+                                index === introImageIndex
+                                  ? "bg-white w-6"
+                                  : "bg-white/50 w-2"
+                              }`}
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <Palmtree className="h-24 w-24 text-primary/30" />
+                    </div>
+                  )}
                 </div>
                 {/* Stats overlay avec animation */}
                 <motion.div
@@ -436,23 +549,7 @@ export function HomePageClient({
                   >
                     <Card className="group overflow-hidden hover:shadow-luxury transition-all duration-300 h-full">
                       <div className="aspect-[4/3] relative overflow-hidden bg-gradient-to-br from-primary/20 to-secondary/20">
-                        {room.image ? (
-                          <Image
-                            src={room.image}
-                            alt={room.nom}
-                            fill
-                            className="object-cover transition-transform duration-500 group-hover:scale-110"
-                            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                          />
-                        ) : (
-                          <motion.div
-                            className="absolute inset-0 flex items-center justify-center"
-                            whileHover={{ scale: 1.1 }}
-                            transition={{ duration: 0.6 }}
-                          >
-                            <Palmtree className="h-16 w-16 text-primary/30" />
-                          </motion.div>
-                        )}
+                        <RoomImageSlideshow images={room.images} alt={room.nom} />
                         <div className="absolute top-4 left-4">
                           <Badge
                             variant="secondary"

@@ -29,7 +29,7 @@ export default async function HomePage() {
       })))
     : [];
 
-  // Convertir les chambres pour le client
+  // Convertir les chambres pour le client (avec toutes les images)
   const featuredRooms = chambresResult.success && chambresResult.data
     ? chambresResult.data.map(chambre => ({
         id: chambre.id,
@@ -40,15 +40,28 @@ export default async function HomePage() {
         prix: Number(chambre.prix),
         capacite: chambre.capacite,
         superficie: chambre.superficie,
-        image: chambre.images[0]?.url || null,
+        images: chambre.images.map(img => img.url),
         isFeatured: chambre.isFeatured,
       }))
+    : [];
+
+  // Collecter toutes les images de chambres pour le diaporama de la section introduction
+  const allChambreImages = chambresResult.success && chambresResult.data
+    ? shuffleArray(
+        chambresResult.data.flatMap(chambre =>
+          chambre.images.map(img => ({
+            url: img.url,
+            alt: chambre.nom,
+          }))
+        )
+      )
     : [];
 
   return (
     <HomePageClient
       initialBannerImages={bannerImages}
       featuredRooms={featuredRooms}
+      introImages={allChambreImages}
     />
   );
 }
