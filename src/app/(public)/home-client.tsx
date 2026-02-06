@@ -59,7 +59,13 @@ interface HomePageClientProps {
 }
 
 // Composant diaporama pour les cartes de chambres
-function RoomImageSlideshow({ images, alt }: { images: string[]; alt: string }) {
+function RoomImageSlideshow({
+  images,
+  alt,
+}: {
+  images: string[];
+  alt: string;
+}) {
   const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
@@ -413,12 +419,16 @@ export function HomePageClient({
             <ScrollReveal variant="fadeLeft" delay={0.2}>
               <div className="relative">
                 <div className="aspect-[4/3] rounded-2xl overflow-hidden bg-gradient-to-br from-primary/20 to-secondary/20 relative">
-                  {introImages.length > 0 ? (
+                  {/* Palmtree toujours visible en fond pendant les transitions */}
+                  <div className="absolute inset-0 flex items-center justify-center z-0">
+                    <Palmtree className="h-24 w-24 text-primary/30" />
+                  </div>
+                  {introImages.length > 0 && (
                     <>
                       <AnimatePresence mode="wait">
                         <motion.div
                           key={introImageIndex}
-                          className="absolute inset-0"
+                          className="absolute inset-0 z-1"
                           initial={{ opacity: 0, scale: 1.05 }}
                           animate={{ opacity: 1, scale: 1 }}
                           exit={{ opacity: 0 }}
@@ -448,10 +458,6 @@ export function HomePageClient({
                         </div>
                       )}
                     </>
-                  ) : (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <Palmtree className="h-24 w-24 text-primary/30" />
-                    </div>
                   )}
                 </div>
                 {/* Stats overlay avec animation */}
@@ -549,7 +555,10 @@ export function HomePageClient({
                   >
                     <Card className="group overflow-hidden hover:shadow-luxury transition-all duration-300 h-full">
                       <div className="aspect-[4/3] relative overflow-hidden bg-gradient-to-br from-primary/20 to-secondary/20">
-                        <RoomImageSlideshow images={room.images} alt={room.nom} />
+                        <RoomImageSlideshow
+                          images={room.images}
+                          alt={room.nom}
+                        />
                         <div className="absolute top-4 left-4">
                           <Badge
                             variant="secondary"
