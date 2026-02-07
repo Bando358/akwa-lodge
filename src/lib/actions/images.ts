@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { logActivity } from "@/lib/activity-log";
 
 // Validation personnalisée pour les URLs (accepte les URLs complètes et les chemins relatifs)
 const urlOrPathSchema = z.string().refine(
@@ -130,6 +131,7 @@ export async function createImage(data: ImageInput) {
     if (data.evenementId) {
       revalidatePath("/admin/evenements");
     }
+    logActivity({ action: "CREATE", entityType: "Image", entityId: image.id, description: "Image ajoutee" }).catch(() => {});
 
     return { success: true, data: image };
   } catch (error) {
@@ -153,6 +155,7 @@ export async function createImages(images: ImageInput[]) {
     revalidatePath("/admin/galerie");
     revalidatePath("/galerie");
     revalidatePath("/"); // Revalidate homepage for banner images
+    logActivity({ action: "CREATE", entityType: "Image", description: "Lot d'images ajoutees (" + images.length + ")" }).catch(() => {});
 
     return { success: true, data: createdImages };
   } catch (error) {
@@ -183,6 +186,7 @@ export async function updateImage(id: string, data: Partial<ImageInput>) {
     revalidatePath("/admin/galerie");
     revalidatePath("/galerie");
     revalidatePath("/"); // Revalidate homepage for banner images
+    logActivity({ action: "UPDATE", entityType: "Image", entityId: id, description: "Image modifiee" }).catch(() => {});
 
     return { success: true, data: image };
   } catch (error) {
@@ -201,6 +205,7 @@ export async function deleteImage(id: string) {
     revalidatePath("/admin/galerie");
     revalidatePath("/galerie");
     revalidatePath("/"); // Revalidate homepage
+    logActivity({ action: "DELETE", entityType: "Image", entityId: id, description: "Image supprimee" }).catch(() => {});
 
     return { success: true };
   } catch (error) {
@@ -219,6 +224,7 @@ export async function deleteImages(ids: string[]) {
     revalidatePath("/admin/galerie");
     revalidatePath("/galerie");
     revalidatePath("/"); // Revalidate homepage
+    logActivity({ action: "DELETE", entityType: "Image", description: "Lot d'images supprimees (" + ids.length + ")" }).catch(() => {});
 
     return { success: true };
   } catch (error) {
@@ -246,6 +252,7 @@ export async function toggleImageFeatured(id: string) {
     revalidatePath("/admin/galerie");
     revalidatePath("/galerie");
     revalidatePath("/");
+    logActivity({ action: "TOGGLE", entityType: "Image", entityId: id, description: "Image " + (updatedImage.isFeatured ? "mise en vedette" : "retiree de la vedette") }).catch(() => {});
 
     return { success: true, data: updatedImage };
   } catch (error) {
@@ -358,6 +365,7 @@ export async function cleanupInvalidImages() {
     revalidatePath("/admin/galerie");
     revalidatePath("/galerie");
     revalidatePath("/");
+    logActivity({ action: "DELETE", entityType: "Image", description: invalidImages.length + " image(s) invalide(s) nettoyee(s)" }).catch(() => {});
 
     return {
       success: true,

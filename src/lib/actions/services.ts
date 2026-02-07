@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { ServiceType } from "@prisma/client";
+import { logActivity } from "@/lib/activity-log";
 
 // Schéma de validation pour les services
 const serviceSchema = z.object({
@@ -140,6 +141,7 @@ export async function createService(data: ServiceInput) {
     revalidatePath("/admin/services");
     revalidatePath("/activites");
     revalidatePath("/restauration");
+    logActivity({ action: "CREATE", entityType: "Service", entityId: service.id, description: "Service cree : " + validatedData.nom }).catch(() => {});
 
     return { success: true, data: service };
   } catch (error) {
@@ -189,6 +191,7 @@ export async function updateService(id: string, data: Partial<ServiceInput>) {
     revalidatePath(`/admin/services/${id}`);
     revalidatePath("/activites");
     revalidatePath("/restauration");
+    logActivity({ action: "UPDATE", entityType: "Service", entityId: id, description: "Service modifie : " + service.nom }).catch(() => {});
 
     return { success: true, data: service };
   } catch (error) {
@@ -207,6 +210,7 @@ export async function deleteService(id: string) {
     revalidatePath("/admin/services");
     revalidatePath("/activites");
     revalidatePath("/restauration");
+    logActivity({ action: "DELETE", entityType: "Service", entityId: id, description: "Service supprime" }).catch(() => {});
 
     return { success: true };
   } catch (error) {
@@ -234,6 +238,7 @@ export async function toggleServiceActive(id: string) {
     revalidatePath("/admin/services");
     revalidatePath("/activites");
     revalidatePath("/restauration");
+    logActivity({ action: "TOGGLE", entityType: "Service", entityId: id, description: "Service " + (updatedService.isActive ? "active" : "desactive") + " : " + updatedService.nom }).catch(() => {});
 
     return { success: true, data: updatedService };
   } catch (error) {
@@ -262,6 +267,7 @@ export async function toggleServiceFeatured(id: string) {
     revalidatePath("/activites");
     revalidatePath("/restauration");
     revalidatePath("/");
+    logActivity({ action: "TOGGLE", entityType: "Service", entityId: id, description: "Service " + (updatedService.isFeatured ? "mis en vedette" : "retire de la vedette") + " : " + updatedService.nom }).catch(() => {});
 
     return { success: true, data: updatedService };
   } catch (error) {

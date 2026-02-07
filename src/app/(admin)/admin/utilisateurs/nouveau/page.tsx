@@ -6,7 +6,7 @@ import Link from "next/link";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import { ArrowLeft, Loader2, Save, Users, Eye, EyeOff } from "lucide-react";
+import { ArrowLeft, Loader2, Save, Users, Eye, EyeOff, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Role } from "@prisma/client";
 import { Button } from "@/components/ui/button";
@@ -44,6 +44,8 @@ const userFormSchema = z.object({
   confirmPassword: z.string(),
   role: z.nativeEnum(Role).default("EDITOR"),
   isActive: z.boolean().default(true),
+  telephone: z.string().optional(),
+  whatsappApiKey: z.string().optional(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Les mots de passe ne correspondent pas",
   path: ["confirmPassword"],
@@ -66,6 +68,8 @@ export default function NouvelUtilisateurPage() {
       confirmPassword: "",
       role: "EDITOR",
       isActive: true,
+      telephone: "",
+      whatsappApiKey: "",
     },
   });
 
@@ -79,6 +83,8 @@ export default function NouvelUtilisateurPage() {
         password: data.password,
         role: data.role,
         isActive: data.isActive,
+        telephone: data.telephone || null,
+        whatsappApiKey: data.whatsappApiKey || null,
       });
 
       if (result.success) {
@@ -203,12 +209,30 @@ export default function NouvelUtilisateurPage() {
                         <FormItem>
                           <FormLabel>Confirmer *</FormLabel>
                           <FormControl>
-                            <Input
-                              type={showPassword ? "text" : "password"}
-                              placeholder="••••••••"
-                              {...field}
-                            />
+                            <div className="relative">
+                              <Input
+                                type={showPassword ? "text" : "password"}
+                                placeholder="••••••••"
+                                {...field}
+                              />
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="absolute right-0 top-0 h-full px-3"
+                                onClick={() => setShowPassword(!showPassword)}
+                              >
+                                {showPassword ? (
+                                  <EyeOff className="h-4 w-4" />
+                                ) : (
+                                  <Eye className="h-4 w-4" />
+                                )}
+                              </Button>
+                            </div>
                           </FormControl>
+                          <FormDescription>
+                            Retapez le mot de passe
+                          </FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -273,6 +297,61 @@ export default function NouvelUtilisateurPage() {
                             onCheckedChange={field.onChange}
                           />
                         </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <MessageCircle className="h-5 w-5" />
+                    Notifications WhatsApp
+                  </CardTitle>
+                  <CardDescription>
+                    Recevez les alertes sur WhatsApp via CallMeBot
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="telephone"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>N WhatsApp</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="tel"
+                            placeholder="22501020304"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Format international sans + (ex: 22501020304)
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="whatsappApiKey"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Cle API CallMeBot</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="123456"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Envoyez &quot;I allow callmebot to send me messages&quot; au{" "}
+                          <strong>+34 623 78 95 80</strong> sur WhatsApp pour recevoir la cle.
+                        </FormDescription>
+                        <FormMessage />
                       </FormItem>
                     )}
                   />

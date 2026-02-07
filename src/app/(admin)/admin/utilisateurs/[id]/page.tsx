@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { getUserById } from "@/lib/actions/users";
+import { auth } from "@/lib/auth";
 import { EditUserForm } from "./edit-form";
 
 interface EditUserPageProps {
@@ -16,5 +17,8 @@ export default async function EditUserPage({
     notFound();
   }
 
-  return <EditUserForm user={result.data} />;
+  const session = await auth();
+  const isSelf = session?.user?.email === result.data.email;
+
+  return <EditUserForm user={result.data} isSelf={isSelf} />;
 }

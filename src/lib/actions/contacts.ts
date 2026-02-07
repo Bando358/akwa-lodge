@@ -3,6 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { notifyNewContact } from "@/lib/mail";
+import { notifyWhatsAppNewContact } from "@/lib/whatsapp";
+import { logActivity } from "@/lib/activity-log";
 
 // Schéma de validation pour les contacts
 const contactSchema = z.object({
@@ -33,6 +36,17 @@ export async function createContact(data: ContactInput) {
     });
 
     revalidatePath("/admin/contacts");
+
+    // Notifications aux admins (en arrière-plan, sans bloquer)
+    const notifData = {
+      nom: validatedData.nom,
+      prenom: validatedData.prenom,
+      email: validatedData.email,
+      sujet: validatedData.sujet,
+      message: validatedData.message,
+    };
+    notifyNewContact(notifData).catch(() => {});
+    notifyWhatsAppNewContact(notifData).catch(() => {});
 
     return { success: true, data: contact };
   } catch (error) {
@@ -96,6 +110,7 @@ export async function markContactAsRead(id: string) {
     });
 
     revalidatePath("/admin/contacts");
+    logActivity({ action: "UPDATE", entityType: "Contact", entityId: id, description: "Contact marque comme lu" }).catch(() => {});
 
     return { success: true, data: contact };
   } catch (error) {
@@ -113,6 +128,7 @@ export async function archiveContact(id: string) {
     });
 
     revalidatePath("/admin/contacts");
+    logActivity({ action: "UPDATE", entityType: "Contact", entityId: id, description: "Contact archive" }).catch(() => {});
 
     return { success: true, data: contact };
   } catch (error) {
@@ -129,6 +145,7 @@ export async function deleteContact(id: string) {
     });
 
     revalidatePath("/admin/contacts");
+    logActivity({ action: "DELETE", entityType: "Contact", entityId: id, description: "Contact supprime" }).catch(() => {});
 
     return { success: true };
   } catch (error) {

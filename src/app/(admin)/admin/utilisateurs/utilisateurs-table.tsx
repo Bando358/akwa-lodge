@@ -1,12 +1,10 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   MoreHorizontal,
   Pencil,
-  Trash2,
   UserCheck,
   UserX,
   Shield,
@@ -32,17 +30,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import {
-  deleteUser,
   toggleUserActive,
   updateUserRole,
 } from "@/lib/actions/users";
@@ -68,28 +55,6 @@ const roleColors: Record<Role, string> = {
 
 export function UtilisateursTable({ users }: { users: User[] }) {
   const router = useRouter();
-  const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
-
-  const handleDelete = async () => {
-    if (!deleteId) return;
-
-    setIsDeleting(true);
-    try {
-      const result = await deleteUser(deleteId);
-      if (result.success) {
-        toast.success("Utilisateur supprimé");
-        router.refresh();
-      } else {
-        toast.error(result.error || "Erreur lors de la suppression");
-      }
-    } catch {
-      toast.error("Une erreur est survenue");
-    } finally {
-      setIsDeleting(false);
-      setDeleteId(null);
-    }
-  };
 
   const handleToggleActive = async (id: string) => {
     try {
@@ -218,14 +183,6 @@ export function UtilisateursTable({ users }: { users: User[] }) {
                         </>
                       )}
                     </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      className="text-red-600"
-                      onClick={() => setDeleteId(user.id)}
-                    >
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      Supprimer
-                    </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </TableCell>
@@ -233,28 +190,6 @@ export function UtilisateursTable({ users }: { users: User[] }) {
           ))}
         </TableBody>
       </Table>
-
-      <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
-            <AlertDialogDescription>
-              Êtes-vous sûr de vouloir supprimer cet utilisateur ? Cette action est
-              irréversible.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Annuler</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              disabled={isDeleting}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              {isDeleting ? "Suppression..." : "Supprimer"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </>
   );
 }

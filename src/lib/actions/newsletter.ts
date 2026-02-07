@@ -3,16 +3,17 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { notifyNewNewsletter } from "@/lib/mail";
+import { notifyWhatsAppNewNewsletter } from "@/lib/whatsapp";
+import { logActivity } from "@/lib/activity-log";
 
 // Schéma de validation pour les abonnés newsletter
 const newsletterSchema = z.object({
   email: z.string().email("Email invalide"),
   nom: z.string().optional().nullable(),
-  isActive: z.boolean().default(true),
+  isActive: z.boolean().optional().default(true),
   source: z.string().optional().nullable(),
 });
-
-type NewsletterInput = z.infer<typeof newsletterSchema>;
 
 // Récupérer tous les abonnés
 export async function getNewsletterSubscribers(options?: {
@@ -61,7 +62,8 @@ export async function getNewsletterSubscriberById(id: string) {
 }
 
 // S'abonner à la newsletter
-export async function subscribeNewsletter(data: NewsletterInput) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function subscribeNewsletter(data: any) {
   try {
     const validatedData = newsletterSchema.parse(data);
 
@@ -87,6 +89,10 @@ export async function subscribeNewsletter(data: NewsletterInput) {
     });
 
     revalidatePath("/admin/newsletter");
+
+    // Notifications aux admins (en arrière-plan, sans bloquer)
+    notifyNewNewsletter({ email: validatedData.email }).catch(() => {});
+    notifyWhatsAppNewNewsletter({ email: validatedData.email }).catch(() => {});
 
     return { success: true, data: subscriber };
   } catch (error) {
@@ -132,6 +138,8 @@ export async function deleteNewsletterSubscriber(id: string) {
 
     revalidatePath("/admin/newsletter");
 
+    logActivity({ action: "DELETE", entityType: "Newsletter", entityId: id, description: "Abonne newsletter supprime" }).catch(() => {});
+
     return { success: true };
   } catch (error) {
     console.error("Erreur lors de la suppression:", error);
@@ -147,6 +155,8 @@ export async function deleteNewsletterSubscribers(ids: string[]) {
     });
 
     revalidatePath("/admin/newsletter");
+
+    logActivity({ action: "DELETE", entityType: "Newsletter", description: "Abonnes newsletter supprimes (" + ids.length + ")" }).catch(() => {});
 
     return { success: true };
   } catch (error) {
@@ -172,6 +182,8 @@ export async function toggleNewsletterSubscriberActive(id: string) {
     });
 
     revalidatePath("/admin/newsletter");
+
+    logActivity({ action: "TOGGLE", entityType: "Newsletter", entityId: id, description: "Abonne " + (updatedSubscriber.isActive ? "active" : "desactive") + " : " + updatedSubscriber.email }).catch(() => {});
 
     return { success: true, data: updatedSubscriber };
   } catch (error) {

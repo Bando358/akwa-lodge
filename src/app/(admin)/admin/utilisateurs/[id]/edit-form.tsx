@@ -6,7 +6,7 @@ import Link from "next/link";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import { ArrowLeft, Loader2, Save, Users, Eye, EyeOff } from "lucide-react";
+import { ArrowLeft, Loader2, Save, Users, Eye, EyeOff, MessageCircle, Send } from "lucide-react";
 import { toast } from "sonner";
 import { Role } from "@prisma/client";
 import { Button } from "@/components/ui/button";
@@ -36,6 +36,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { updateUser } from "@/lib/actions/users";
+import { testWhatsAppNotification } from "@/lib/actions/notifications";
 
 const userFormSchema = z.object({
   name: z.string().min(1, "Le nom est requis"),
@@ -44,6 +45,8 @@ const userFormSchema = z.object({
   confirmPassword: z.string().optional().or(z.literal("")),
   role: z.nativeEnum(Role),
   isActive: z.boolean(),
+  telephone: z.string().optional(),
+  whatsappApiKey: z.string().optional(),
 }).refine((data) => {
   if (data.password && data.password.length > 0) {
     return data.password === data.confirmPassword;
@@ -62,16 +65,20 @@ type User = {
   email: string;
   role: Role;
   isActive: boolean;
+  telephone: string | null;
+  whatsappApiKey: string | null;
 };
 
 interface EditUserFormProps {
   user: User;
+  isSelf?: boolean;
 }
 
-export function EditUserForm({ user }: EditUserFormProps) {
+export function EditUserForm({ user, isSelf = false }: EditUserFormProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [isTesting, setIsTesting] = useState(false);
 
   const form = useForm<UserFormValues>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -83,6 +90,8 @@ export function EditUserForm({ user }: EditUserFormProps) {
       confirmPassword: "",
       role: user.role,
       isActive: user.isActive,
+      telephone: user.telephone || "",
+      whatsappApiKey: user.whatsappApiKey || "",
     },
   });
 
@@ -96,14 +105,17 @@ export function EditUserForm({ user }: EditUserFormProps) {
         role: Role;
         isActive: boolean;
         password?: string;
+        telephone?: string | null;
+        whatsappApiKey?: string | null;
       } = {
         name: data.name,
         email: data.email,
         role: data.role,
         isActive: data.isActive,
+        telephone: data.telephone || null,
+        whatsappApiKey: data.whatsappApiKey || null,
       };
 
-      // Ajouter le mot de passe seulement s'il est fourni
       if (data.password && data.password.length > 0) {
         updateData.password = data.password;
       }
@@ -111,11 +123,11 @@ export function EditUserForm({ user }: EditUserFormProps) {
       const result = await updateUser(user.id, updateData);
 
       if (result.success) {
-        toast.success("Utilisateur mis à jour avec succès");
+        toast.success("Utilisateur mis a jour avec succes");
         router.push("/admin/utilisateurs");
         router.refresh();
       } else {
-        toast.error(result.error || "Erreur lors de la mise à jour");
+        toast.error(result.error || "Erreur lors de la mise a jour");
       }
     } catch {
       toast.error("Une erreur est survenue");
@@ -124,9 +136,33 @@ export function EditUserForm({ user }: EditUserFormProps) {
     }
   }
 
+  async function handleTestWhatsApp() {
+    const phone = form.getValues("telephone");
+    const apiKey = form.getValues("whatsappApiKey");
+
+    if (!phone || !apiKey) {
+      toast.error("Renseignez le numero et la cle API avant de tester");
+      return;
+    }
+
+    setIsTesting(true);
+    try {
+      const result = await testWhatsAppNotification(phone, apiKey);
+      if (result.success) {
+        toast.success("Message de test envoye !");
+      } else {
+        toast.error(result.error || "Erreur lors du test");
+      }
+    } catch {
+      toast.error("Erreur lors du test");
+    } finally {
+      setIsTesting(false);
+    }
+  }
+
   return (
     <div className="p-6 space-y-6">
-      {/* En-tête */}
+      {/* En-tete */}
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" asChild>
           <Link href="/admin/utilisateurs">
@@ -229,7 +265,7 @@ export function EditUserForm({ user }: EditUserFormProps) {
                             </div>
                           </FormControl>
                           <FormDescription>
-                            Minimum 8 caractères
+                            Minimum 8 caracteres
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
@@ -243,12 +279,30 @@ export function EditUserForm({ user }: EditUserFormProps) {
                         <FormItem>
                           <FormLabel>Confirmer</FormLabel>
                           <FormControl>
-                            <Input
-                              type={showPassword ? "text" : "password"}
-                              placeholder="••••••••"
-                              {...field}
-                            />
+                            <div className="relative">
+                              <Input
+                                type={showPassword ? "text" : "password"}
+                                placeholder="••••••••"
+                                {...field}
+                              />
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="absolute right-0 top-0 h-full px-3"
+                                onClick={() => setShowPassword(!showPassword)}
+                              >
+                                {showPassword ? (
+                                  <EyeOff className="h-4 w-4" />
+                                ) : (
+                                  <Eye className="h-4 w-4" />
+                                )}
+                              </Button>
+                            </div>
                           </FormControl>
+                          <FormDescription>
+                            Retapez le mot de passe
+                          </FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -258,11 +312,11 @@ export function EditUserForm({ user }: EditUserFormProps) {
               </Card>
             </div>
 
-            {/* Colonne latérale */}
+            {/* Colonne laterale */}
             <div className="space-y-6">
               <Card>
                 <CardHeader>
-                  <CardTitle>Rôle et statut</CardTitle>
+                  <CardTitle>Role et statut</CardTitle>
                   <CardDescription>
                     Permissions de l&apos;utilisateur
                   </CardDescription>
@@ -273,23 +327,26 @@ export function EditUserForm({ user }: EditUserFormProps) {
                     name="role"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Rôle *</FormLabel>
+                        <FormLabel>Role *</FormLabel>
                         <Select
                           onValueChange={field.onChange}
                           value={field.value}
+                          disabled={isSelf}
                         >
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Sélectionner" />
+                              <SelectValue placeholder="Selectionner" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
                             <SelectItem value="ADMIN">Administrateur</SelectItem>
-                            <SelectItem value="EDITOR">Éditeur</SelectItem>
+                            <SelectItem value="EDITOR">Editeur</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormDescription>
-                          Admin: accès complet. Éditeur: accès limité.
+                          {isSelf
+                            ? "Vous ne pouvez pas modifier votre propre role."
+                            : "Admin: acces complet. Editeur: acces limite."}
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -316,6 +373,76 @@ export function EditUserForm({ user }: EditUserFormProps) {
                       </FormItem>
                     )}
                   />
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <MessageCircle className="h-5 w-5" />
+                    Notifications WhatsApp
+                  </CardTitle>
+                  <CardDescription>
+                    Recevez les alertes sur WhatsApp via CallMeBot
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="telephone"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>N WhatsApp</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="tel"
+                            placeholder="22501020304"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Format international sans + (ex: 22501020304)
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="whatsappApiKey"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Cle API CallMeBot</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="123456"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Envoyez &quot;I allow callmebot to send me messages&quot; au{" "}
+                          <strong>+34 623 78 95 80</strong> sur WhatsApp pour recevoir votre cle.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleTestWhatsApp}
+                    disabled={isTesting}
+                  >
+                    {isTesting ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Send className="mr-2 h-4 w-4" />
+                    )}
+                    Tester
+                  </Button>
                 </CardContent>
               </Card>
 

@@ -37,9 +37,12 @@ import {
   HeroContent,
   HeroItem,
 } from "@/components/animations";
+import { toast } from "sonner";
+import { createReservation } from "@/lib/actions/reservations";
 
 const reservationSchema = z.object({
   nom: z.string().min(2, "Le nom est requis"),
+  prenom: z.string().min(2, "Le prénom est requis"),
   email: z.string().email("Email invalide"),
   telephone: z.string().min(8, "Numéro de téléphone invalide"),
   dateArrivee: z.string().min(1, "Date d'arrivée requise"),
@@ -66,6 +69,7 @@ export default function ReservationPage() {
     resolver: zodResolver(reservationSchema),
     defaultValues: {
       nom: "",
+      prenom: "",
       email: "",
       telephone: "",
       dateArrivee: "",
@@ -78,11 +82,30 @@ export default function ReservationPage() {
 
   const onSubmit = async (data: ReservationFormValues) => {
     setIsSubmitting(true);
-    // Simuler un envoi
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    console.log(data);
-    setIsSubmitting(false);
-    setIsSuccess(true);
+    try {
+      const result = await createReservation({
+        nom: data.nom,
+        prenom: data.prenom,
+        email: data.email,
+        telephone: data.telephone,
+        dateArrivee: new Date(data.dateArrivee),
+        dateDepart: new Date(data.dateDepart),
+        nombreAdultes: parseInt(data.nombrePersonnes) || 1,
+        message: data.message || null,
+        demandesSpeciales: [],
+        source: "site_web",
+      });
+
+      if (result.success) {
+        setIsSuccess(true);
+      } else {
+        toast.error(result.error || "Erreur lors de l'envoi de la réservation");
+      }
+    } catch {
+      toast.error("Une erreur est survenue");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (isSuccess) {
@@ -225,7 +248,7 @@ export default function ReservationPage() {
                           name="nom"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Nom complet *</FormLabel>
+                              <FormLabel>Nom *</FormLabel>
                               <FormControl>
                                 <Input placeholder="Votre nom" {...field} />
                               </FormControl>
@@ -233,6 +256,22 @@ export default function ReservationPage() {
                             </FormItem>
                           )}
                         />
+                        <FormField
+                          control={form.control}
+                          name="prenom"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Prénom *</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Votre prénom" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      <div className="grid sm:grid-cols-2 gap-6">
                         <FormField
                           control={form.control}
                           name="email"
@@ -250,25 +289,24 @@ export default function ReservationPage() {
                             </FormItem>
                           )}
                         />
+                        <FormField
+                          control={form.control}
+                          name="telephone"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Téléphone *</FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="tel"
+                                  placeholder="+225 00 00 00 00 00"
+                                  {...field}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
                       </div>
-
-                      <FormField
-                        control={form.control}
-                        name="telephone"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Téléphone *</FormLabel>
-                            <FormControl>
-                              <Input
-                                type="tel"
-                                placeholder="+225 00 00 00 00 00"
-                                {...field}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
 
                       <div className="grid sm:grid-cols-2 gap-6">
                         <FormField

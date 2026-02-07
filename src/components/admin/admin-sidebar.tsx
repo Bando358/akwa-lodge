@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
+import { NotificationSound } from "@/components/admin/notification-sound";
 import {
   LayoutDashboard,
   BedDouble,
@@ -21,6 +22,7 @@ import {
   Soup,
   Megaphone,
   Percent,
+  Activity,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -105,6 +107,11 @@ const bottomMenuItems = [
     title: "Utilisateurs",
     href: "/admin/utilisateurs",
     icon: Users,
+  },
+  {
+    title: "Activités",
+    href: "/admin/activites",
+    icon: Activity,
   },
   {
     title: "Paramètres",
@@ -222,6 +229,7 @@ export function AdminSidebar({ children }: { children: React.ReactNode }) {
             </div>
           </div>
           {children}
+          <NotificationSound />
         </main>
       </div>
     </SidebarProvider>

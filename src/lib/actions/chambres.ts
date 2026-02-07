@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { logActivity } from "@/lib/activity-log";
 
 // Schéma de validation pour les chambres
 const chambreSchema = z.object({
@@ -154,6 +155,7 @@ export async function createChambre(data: ChambreInput) {
 
     revalidatePath("/admin/chambres");
     revalidatePath("/hebergement");
+    logActivity({ action: "CREATE", entityType: "Chambre", entityId: chambre.id, description: "Chambre creee : " + validatedData.nom }).catch(() => {});
 
     return { success: true, data: chambre };
   } catch (error) {
@@ -220,6 +222,7 @@ export async function updateChambre(id: string, data: Partial<ChambreInput>) {
     revalidatePath(`/admin/chambres/${id}`);
     revalidatePath("/hebergement");
     revalidatePath(`/hebergement/${chambre.slug}`);
+    logActivity({ action: "UPDATE", entityType: "Chambre", entityId: id, description: "Chambre modifiee : " + chambre.nom }).catch(() => {});
 
     return { success: true, data: chambre };
   } catch (error) {
@@ -237,6 +240,7 @@ export async function deleteChambre(id: string) {
 
     revalidatePath("/admin/chambres");
     revalidatePath("/hebergement");
+    logActivity({ action: "DELETE", entityType: "Chambre", entityId: id, description: "Chambre supprimee" }).catch(() => {});
 
     return { success: true };
   } catch (error) {
@@ -263,6 +267,7 @@ export async function toggleChambreActive(id: string) {
 
     revalidatePath("/admin/chambres");
     revalidatePath("/hebergement");
+    logActivity({ action: "TOGGLE", entityType: "Chambre", entityId: id, description: "Chambre " + (updatedChambre.isActive ? "activee" : "desactivee") + " : " + updatedChambre.nom }).catch(() => {});
 
     return { success: true, data: updatedChambre };
   } catch (error) {
@@ -290,6 +295,7 @@ export async function toggleChambreFeatured(id: string) {
     revalidatePath("/admin/chambres");
     revalidatePath("/hebergement");
     revalidatePath("/");
+    logActivity({ action: "TOGGLE", entityType: "Chambre", entityId: id, description: "Chambre " + (updatedChambre.isFeatured ? "mise en vedette" : "retiree de la vedette") + " : " + updatedChambre.nom }).catch(() => {});
 
     return { success: true, data: updatedChambre };
   } catch (error) {

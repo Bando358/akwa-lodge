@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
@@ -11,9 +12,13 @@ import {
   Instagram,
   Twitter,
   Youtube,
+  CheckCircle,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
+import { subscribeNewsletter } from "@/lib/actions/newsletter";
 
 const quickLinks = [
   { name: "Accueil", href: "/" },
@@ -63,6 +68,35 @@ const itemVariants = {
 };
 
 export function Footer() {
+  const [email, setEmail] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubscribed, setIsSubscribed] = useState(false);
+
+  const handleNewsletterSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.trim()) return;
+
+    setIsSubmitting(true);
+    try {
+      const result = await subscribeNewsletter({
+        email: email.trim(),
+        source: "footer",
+      });
+
+      if (result.success) {
+        setIsSubscribed(true);
+        setEmail("");
+        toast.success("Inscription réussie !");
+      } else {
+        toast.error(result.error || "Erreur lors de l'inscription");
+      }
+    } catch {
+      toast.error("Une erreur est survenue");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <footer className="bg-primary text-primary-foreground overflow-hidden">
       {/* Section principale */}
@@ -230,21 +264,36 @@ export function Footer() {
                 exclusives et actualités.
               </p>
             </div>
-            <form className="flex flex-col sm:flex-row gap-3">
-              <Input
-                type="email"
-                placeholder="Votre email"
-                className="bg-white/10 border-white/20 text-primary-foreground placeholder:text-primary-foreground/50 focus-visible:ring-secondary"
-              />
-              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <Button
-                  type="submit"
-                  className="bg-secondary text-secondary-foreground hover:bg-secondary/90 flex-shrink-0"
-                >
-                  S&apos;inscrire
-                </Button>
-              </motion.div>
-            </form>
+            {isSubscribed ? (
+              <div className="flex items-center gap-2 text-secondary">
+                <CheckCircle className="h-5 w-5" />
+                <span>Merci pour votre inscription !</span>
+              </div>
+            ) : (
+              <form onSubmit={handleNewsletterSubmit} className="flex flex-col sm:flex-row gap-3">
+                <Input
+                  type="email"
+                  placeholder="Votre email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="bg-white/10 border-white/20 text-primary-foreground placeholder:text-primary-foreground/50 focus-visible:ring-secondary"
+                />
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                  <Button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="bg-secondary text-secondary-foreground hover:bg-secondary/90 flex-shrink-0"
+                  >
+                    {isSubmitting ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      "S'inscrire"
+                    )}
+                  </Button>
+                </motion.div>
+              </form>
+            )}
           </div>
         </motion.div>
       </div>

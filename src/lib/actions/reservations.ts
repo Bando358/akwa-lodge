@@ -4,6 +4,9 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { ReservationStatut } from "@prisma/client";
+import { notifyNewReservation } from "@/lib/mail";
+import { notifyWhatsAppNewReservation } from "@/lib/whatsapp";
+import { logActivity } from "@/lib/activity-log";
 
 // Schéma de validation pour les réservations
 const reservationSchema = z.object({
@@ -16,12 +19,12 @@ const reservationSchema = z.object({
   ville: z.string().optional().nullable(),
   dateArrivee: z.coerce.date(),
   dateDepart: z.coerce.date(),
-  nombreAdultes: z.number().int().positive().default(1),
-  nombreEnfants: z.number().int().min(0).default(0),
+  nombreAdultes: z.number().int().positive().optional().default(1),
+  nombreEnfants: z.number().int().min(0).optional().default(0),
   chambreId: z.string().optional().nullable(),
   message: z.string().optional().nullable(),
-  demandesSpeciales: z.array(z.string()).default([]),
-  statut: z.nativeEnum(ReservationStatut).default("EN_ATTENTE"),
+  demandesSpeciales: z.array(z.string()).optional().default([]),
+  statut: z.nativeEnum(ReservationStatut).optional().default("EN_ATTENTE"),
   source: z.string().optional().nullable(),
   notesInternes: z.string().optional().nullable(),
 });
@@ -84,7 +87,8 @@ export async function getReservationById(id: string) {
 }
 
 // Créer une réservation
-export async function createReservation(data: ReservationInput) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function createReservation(data: any) {
   try {
     const validatedData = reservationSchema.parse(data);
 
@@ -94,6 +98,20 @@ export async function createReservation(data: ReservationInput) {
 
     revalidatePath("/admin/reservations");
     revalidatePath("/admin");
+
+    // Notifications aux admins (en arrière-plan, sans bloquer)
+    const notifData = {
+      nom: validatedData.nom,
+      prenom: validatedData.prenom,
+      email: validatedData.email,
+      telephone: validatedData.telephone,
+      dateArrivee: validatedData.dateArrivee,
+      dateDepart: validatedData.dateDepart,
+      nombreAdultes: validatedData.nombreAdultes,
+      message: validatedData.message,
+    };
+    notifyNewReservation(notifData).catch(() => {});
+    notifyWhatsAppNewReservation(notifData).catch(() => {});
 
     return { success: true, data: reservation };
   } catch (error) {
@@ -125,6 +143,8 @@ export async function updateReservation(id: string, data: Partial<ReservationInp
     revalidatePath(`/admin/reservations/${id}`);
     revalidatePath("/admin");
 
+    logActivity({ action: "UPDATE", entityType: "Reservation", entityId: id, description: "Reservation modifiee" }).catch(() => {});
+
     return { success: true, data: reservation };
   } catch (error) {
     console.error("Erreur lors de la mise à jour de la réservation:", error);
@@ -144,6 +164,8 @@ export async function updateReservationStatut(id: string, statut: ReservationSta
     revalidatePath(`/admin/reservations/${id}`);
     revalidatePath("/admin");
 
+    logActivity({ action: "UPDATE_STATUT", entityType: "Reservation", entityId: id, description: "Statut reservation change en " + statut }).catch(() => {});
+
     return { success: true, data: reservation };
   } catch (error) {
     console.error("Erreur lors du changement de statut:", error);
@@ -160,6 +182,8 @@ export async function deleteReservation(id: string) {
 
     revalidatePath("/admin/reservations");
     revalidatePath("/admin");
+
+    logActivity({ action: "DELETE", entityType: "Reservation", entityId: id, description: "Reservation supprimee" }).catch(() => {});
 
     return { success: true };
   } catch (error) {

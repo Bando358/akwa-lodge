@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { logActivity } from "@/lib/activity-log";
 
 // Schéma de validation pour les témoignages
 const temoignageSchema = z.object({
@@ -71,6 +72,7 @@ export async function createTemoignage(data: TemoignageInput) {
 
     revalidatePath("/admin/temoignages");
     revalidatePath("/");
+    logActivity({ action: "CREATE", entityType: "Temoignage", entityId: temoignage.id, description: "Temoignage cree par " + validatedData.nom }).catch(() => {});
 
     return { success: true, data: temoignage };
   } catch (error) {
@@ -101,6 +103,7 @@ export async function updateTemoignage(id: string, data: Partial<TemoignageInput
     revalidatePath("/admin/temoignages");
     revalidatePath(`/admin/temoignages/${id}`);
     revalidatePath("/");
+    logActivity({ action: "UPDATE", entityType: "Temoignage", entityId: id, description: "Temoignage modifie" }).catch(() => {});
 
     return { success: true, data: temoignage };
   } catch (error) {
@@ -118,6 +121,7 @@ export async function deleteTemoignage(id: string) {
 
     revalidatePath("/admin/temoignages");
     revalidatePath("/");
+    logActivity({ action: "DELETE", entityType: "Temoignage", entityId: id, description: "Temoignage supprime" }).catch(() => {});
 
     return { success: true };
   } catch (error) {
@@ -136,6 +140,7 @@ export async function approveTemoignage(id: string) {
 
     revalidatePath("/admin/temoignages");
     revalidatePath("/");
+    logActivity({ action: "UPDATE", entityType: "Temoignage", entityId: id, description: "Temoignage approuve" }).catch(() => {});
 
     return { success: true, data: temoignage };
   } catch (error) {
@@ -154,6 +159,7 @@ export async function rejectTemoignage(id: string) {
 
     revalidatePath("/admin/temoignages");
     revalidatePath("/");
+    logActivity({ action: "UPDATE", entityType: "Temoignage", entityId: id, description: "Temoignage rejete" }).catch(() => {});
 
     return { success: true, data: temoignage };
   } catch (error) {
@@ -180,6 +186,7 @@ export async function toggleTemoignageActive(id: string) {
 
     revalidatePath("/admin/temoignages");
     revalidatePath("/");
+    logActivity({ action: "TOGGLE", entityType: "Temoignage", entityId: id, description: "Temoignage " + (updatedTemoignage.isActive ? "active" : "desactive") }).catch(() => {});
 
     return { success: true, data: updatedTemoignage };
   } catch (error) {

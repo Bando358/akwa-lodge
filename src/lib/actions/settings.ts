@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { logActivity } from "@/lib/activity-log";
 
 // Schéma de validation pour les paramètres
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -19,7 +20,7 @@ const settingSchema = z.object({
 type SettingInput = z.infer<typeof settingSchema>;
 
 // Paramètres par défaut du site
-export const defaultSettings = {
+const defaultSettings = {
   // Informations générales
   site_name: "Akwa Luxury Lodge",
   site_description: "Un havre de paix en bord de mer à Jacqueville, Côte d'Ivoire",
@@ -139,6 +140,8 @@ export async function setSetting(key: string, value: string, options?: {
     revalidatePath("/admin/parametres");
     revalidatePath("/");
 
+    logActivity({ action: "UPDATE", entityType: "Setting", description: "Parametre modifie : " + key }).catch(() => {});
+
     return { success: true, data: setting };
   } catch (error) {
     console.error("Erreur lors de la mise à jour du paramètre:", error);
@@ -161,6 +164,8 @@ export async function setSettings(settings: Record<string, string>) {
 
     revalidatePath("/admin/parametres");
     revalidatePath("/");
+
+    logActivity({ action: "UPDATE", entityType: "Setting", description: "Parametres modifies (" + Object.keys(settings).length + ")" }).catch(() => {});
 
     return { success: true };
   } catch (error) {
@@ -215,6 +220,8 @@ export async function resetSettings() {
 
     revalidatePath("/admin/parametres");
     revalidatePath("/");
+
+    logActivity({ action: "UPDATE", entityType: "Setting", description: "Parametres reinitialises" }).catch(() => {});
 
     return { success: true };
   } catch (error) {

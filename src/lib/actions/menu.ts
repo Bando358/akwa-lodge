@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { logActivity } from "@/lib/activity-log";
 
 // Schéma de validation pour les catégories de menu
 const menuCategorieSchema = z.object({
@@ -97,6 +98,8 @@ export async function createMenuCategorie(data: MenuCategorieInput) {
     revalidatePath("/admin/menu");
     revalidatePath("/restauration");
 
+    logActivity({ action: "CREATE", entityType: "MenuCategorie", entityId: categorie.id, description: "Categorie menu creee : " + validatedData.nom }).catch(() => {});
+
     return { success: true, data: categorie };
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -126,6 +129,8 @@ export async function updateMenuCategorie(id: string, data: Partial<MenuCategori
     revalidatePath("/admin/menu");
     revalidatePath("/restauration");
 
+    logActivity({ action: "UPDATE", entityType: "MenuCategorie", entityId: id, description: "Categorie menu modifiee : " + categorie.nom }).catch(() => {});
+
     return { success: true, data: categorie };
   } catch (error) {
     console.error("Erreur lors de la mise à jour de la catégorie:", error);
@@ -142,6 +147,8 @@ export async function deleteMenuCategorie(id: string) {
 
     revalidatePath("/admin/menu");
     revalidatePath("/restauration");
+
+    logActivity({ action: "DELETE", entityType: "MenuCategorie", entityId: id, description: "Categorie menu supprimee" }).catch(() => {});
 
     return { success: true };
   } catch (error) {
@@ -168,6 +175,8 @@ export async function toggleMenuCategorieActive(id: string) {
 
     revalidatePath("/admin/menu");
     revalidatePath("/restauration");
+
+    logActivity({ action: "TOGGLE", entityType: "MenuCategorie", entityId: id, description: "Categorie menu " + (updatedCategorie.isActive ? "activee" : "desactivee") }).catch(() => {});
 
     return { success: true, data: updatedCategorie };
   } catch (error) {
@@ -241,6 +250,8 @@ export async function createPlat(data: PlatInput) {
     revalidatePath("/admin/menu");
     revalidatePath("/restauration");
 
+    logActivity({ action: "CREATE", entityType: "Plat", entityId: plat.id, description: "Plat cree : " + validatedData.nom }).catch(() => {});
+
     return { success: true, data: plat };
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -270,6 +281,8 @@ export async function updatePlat(id: string, data: Partial<PlatInput>) {
     revalidatePath("/admin/menu");
     revalidatePath("/restauration");
 
+    logActivity({ action: "UPDATE", entityType: "Plat", entityId: id, description: "Plat modifie : " + plat.nom }).catch(() => {});
+
     return { success: true, data: plat };
   } catch (error) {
     console.error("Erreur lors de la mise à jour du plat:", error);
@@ -286,6 +299,8 @@ export async function deletePlat(id: string) {
 
     revalidatePath("/admin/menu");
     revalidatePath("/restauration");
+
+    logActivity({ action: "DELETE", entityType: "Plat", entityId: id, description: "Plat supprime" }).catch(() => {});
 
     return { success: true };
   } catch (error) {
@@ -312,6 +327,8 @@ export async function togglePlatActive(id: string) {
 
     revalidatePath("/admin/menu");
     revalidatePath("/restauration");
+
+    logActivity({ action: "TOGGLE", entityType: "Plat", entityId: id, description: "Plat " + (updatedPlat.isActive ? "active" : "desactive") }).catch(() => {});
 
     return { success: true, data: updatedPlat };
   } catch (error) {

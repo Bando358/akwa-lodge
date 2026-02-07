@@ -5,6 +5,8 @@ import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { Role } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { auth } from "@/lib/auth";
+import { logActivity } from "@/lib/activity-log";
 
 // Schéma de validation pour les utilisateurs
 const userSchema = z.object({
@@ -13,6 +15,8 @@ const userSchema = z.object({
   password: z.string().min(8, "Le mot de passe doit faire au moins 8 caractères"),
   role: z.nativeEnum(Role).default("EDITOR"),
   isActive: z.boolean().default(true),
+  telephone: z.string().optional().nullable(),
+  whatsappApiKey: z.string().optional().nullable(),
 });
 
 const updateUserSchema = z.object({
@@ -21,10 +25,20 @@ const updateUserSchema = z.object({
   password: z.string().min(8, "Le mot de passe doit faire au moins 8 caractères").optional(),
   role: z.nativeEnum(Role).optional(),
   isActive: z.boolean().optional(),
+  telephone: z.string().optional().nullable(),
+  whatsappApiKey: z.string().optional().nullable(),
 });
 
 type UserInput = z.infer<typeof userSchema>;
 type UpdateUserInput = z.infer<typeof updateUserSchema>;
+
+// Compte super-admin protégé (invisible et non modifiable par les autres)
+const PROTECTED_EMAIL = "bando358@gmail.com";
+
+async function isCurrentUserProtected(): Promise<boolean> {
+  const session = await auth();
+  return session?.user?.email === PROTECTED_EMAIL;
+}
 
 // Récupérer tous les utilisateurs
 export async function getUsers(options?: {
@@ -32,8 +46,11 @@ export async function getUsers(options?: {
   role?: Role;
 }) {
   try {
+    const isSelf = await isCurrentUserProtected();
+
     const users = await prisma.user.findMany({
       where: {
+        ...(!isSelf && { email: { not: PROTECTED_EMAIL } }),
         ...(options?.isActive !== undefined && { isActive: options.isActive }),
         ...(options?.role && { role: options.role }),
       },
@@ -43,6 +60,8 @@ export async function getUsers(options?: {
         email: true,
         role: true,
         isActive: true,
+        telephone: true,
+        whatsappApiKey: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -67,6 +86,8 @@ export async function getUserById(id: string) {
         email: true,
         role: true,
         isActive: true,
+        telephone: true,
+        whatsappApiKey: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -74,6 +95,13 @@ export async function getUserById(id: string) {
 
     if (!user) {
       return { success: false, error: "Utilisateur non trouvé" };
+    }
+
+    if (user.email === PROTECTED_EMAIL) {
+      const isSelf = await isCurrentUserProtected();
+      if (!isSelf) {
+        return { success: false, error: "Utilisateur non trouvé" };
+      }
     }
 
     return { success: true, data: user };
@@ -111,11 +139,20 @@ export async function createUser(data: UserInput) {
         email: true,
         role: true,
         isActive: true,
+        telephone: true,
+        whatsappApiKey: true,
         createdAt: true,
       },
     });
 
     revalidatePath("/admin/utilisateurs");
+
+    logActivity({
+      action: "CREATE",
+      entityType: "User",
+      entityId: user.id,
+      description: `Utilisateur cree : ${validatedData.name} (${validatedData.email})`,
+    }).catch(() => {});
 
     return { success: true, data: user };
   } catch (error) {
@@ -138,6 +175,24 @@ export async function updateUser(id: string, data: UpdateUserInput) {
 
     if (!existingUser) {
       return { success: false, error: "Utilisateur non trouvé" };
+    }
+
+    if (existingUser.email === PROTECTED_EMAIL) {
+      const isSelf = await isCurrentUserProtected();
+      if (!isSelf) {
+        return { success: false, error: "Ce compte ne peut pas être modifié" };
+      }
+    }
+
+    // Empêcher un utilisateur de modifier son propre rôle (sauf super-admin)
+    const session = await auth();
+    if (
+      validatedData.role &&
+      validatedData.role !== existingUser.role &&
+      session?.user?.email === existingUser.email &&
+      session?.user?.email !== PROTECTED_EMAIL
+    ) {
+      return { success: false, error: "Vous ne pouvez pas modifier votre propre rôle" };
     }
 
     // Vérifier l'unicité de l'email si changé
@@ -169,12 +224,21 @@ export async function updateUser(id: string, data: UpdateUserInput) {
         email: true,
         role: true,
         isActive: true,
+        telephone: true,
+        whatsappApiKey: true,
         updatedAt: true,
       },
     });
 
     revalidatePath("/admin/utilisateurs");
     revalidatePath(`/admin/utilisateurs/${id}`);
+
+    logActivity({
+      action: "UPDATE",
+      entityType: "User",
+      entityId: id,
+      description: `Utilisateur modifie : ${user.name} (${user.email})`,
+    }).catch(() => {});
 
     return { success: true, data: user };
   } catch (error) {
@@ -200,6 +264,13 @@ export async function deleteUser(id: string) {
 
     if (!userToDelete) {
       return { success: false, error: "Utilisateur non trouvé" };
+    }
+
+    if (userToDelete.email === PROTECTED_EMAIL) {
+      const isSelf = await isCurrentUserProtected();
+      if (!isSelf) {
+        return { success: false, error: "Ce compte ne peut pas être supprimé" };
+      }
     }
 
     if (userToDelete.role === "ADMIN" && adminCount <= 1) {
@@ -230,6 +301,13 @@ export async function toggleUserActive(id: string) {
       return { success: false, error: "Utilisateur non trouvé" };
     }
 
+    if (user.email === PROTECTED_EMAIL) {
+      const isSelf = await isCurrentUserProtected();
+      if (!isSelf) {
+        return { success: false, error: "Ce compte ne peut pas être modifié" };
+      }
+    }
+
     // Vérifier qu'on ne désactive pas le dernier admin
     if (user.role === "ADMIN" && user.isActive) {
       const activeAdminCount = await prisma.user.count({
@@ -255,6 +333,13 @@ export async function toggleUserActive(id: string) {
 
     revalidatePath("/admin/utilisateurs");
 
+    logActivity({
+      action: "TOGGLE",
+      entityType: "User",
+      entityId: id,
+      description: `Utilisateur ${updatedUser.isActive ? "active" : "desactive"} : ${updatedUser.name} (${updatedUser.email})`,
+    }).catch(() => {});
+
     return { success: true, data: updatedUser };
   } catch (error) {
     console.error("Erreur lors du changement de statut:", error);
@@ -271,6 +356,13 @@ export async function updateUserRole(id: string, role: Role) {
 
     if (!user) {
       return { success: false, error: "Utilisateur non trouvé" };
+    }
+
+    if (user.email === PROTECTED_EMAIL) {
+      const isSelf = await isCurrentUserProtected();
+      if (!isSelf) {
+        return { success: false, error: "Ce compte ne peut pas être modifié" };
+      }
     }
 
     // Vérifier qu'on ne retire pas le dernier admin
@@ -297,6 +389,13 @@ export async function updateUserRole(id: string, role: Role) {
     });
 
     revalidatePath("/admin/utilisateurs");
+
+    logActivity({
+      action: "CHANGE_ROLE",
+      entityType: "User",
+      entityId: id,
+      description: `Role change en ${role} pour ${updatedUser.name} (${updatedUser.email})`,
+    }).catch(() => {});
 
     return { success: true, data: updatedUser };
   } catch (error) {

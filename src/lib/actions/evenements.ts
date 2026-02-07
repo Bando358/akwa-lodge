@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { EvenementType } from "@prisma/client";
+import { logActivity } from "@/lib/activity-log";
 
 // Schéma de validation pour les événements
 const evenementSchema = z.object({
@@ -145,6 +146,7 @@ export async function createEvenement(data: EvenementInput) {
     revalidatePath("/admin/evenements");
     revalidatePath("/evenements");
     revalidatePath("/conferences");
+    logActivity({ action: "CREATE", entityType: "Evenement", entityId: evenement.id, description: "Evenement cree : " + validatedData.titre }).catch(() => {});
 
     return { success: true, data: evenement };
   } catch (error) {
@@ -194,6 +196,7 @@ export async function updateEvenement(id: string, data: Partial<EvenementInput>)
     revalidatePath(`/admin/evenements/${id}`);
     revalidatePath("/evenements");
     revalidatePath("/conferences");
+    logActivity({ action: "UPDATE", entityType: "Evenement", entityId: id, description: "Evenement modifie : " + evenement.titre }).catch(() => {});
 
     return { success: true, data: evenement };
   } catch (error) {
@@ -212,6 +215,7 @@ export async function deleteEvenement(id: string) {
     revalidatePath("/admin/evenements");
     revalidatePath("/evenements");
     revalidatePath("/conferences");
+    logActivity({ action: "DELETE", entityType: "Evenement", entityId: id, description: "Evenement supprime" }).catch(() => {});
 
     return { success: true };
   } catch (error) {
@@ -239,6 +243,7 @@ export async function toggleEvenementActive(id: string) {
     revalidatePath("/admin/evenements");
     revalidatePath("/evenements");
     revalidatePath("/conferences");
+    logActivity({ action: "TOGGLE", entityType: "Evenement", entityId: id, description: "Evenement " + (updatedEvenement.isActive ? "active" : "desactive") + " : " + updatedEvenement.titre }).catch(() => {});
 
     return { success: true, data: updatedEvenement };
   } catch (error) {
@@ -267,6 +272,7 @@ export async function toggleEvenementFeatured(id: string) {
     revalidatePath("/evenements");
     revalidatePath("/conferences");
     revalidatePath("/");
+    logActivity({ action: "TOGGLE", entityType: "Evenement", entityId: id, description: "Evenement " + (updatedEvenement.isFeatured ? "mis en vedette" : "retire de la vedette") + " : " + updatedEvenement.titre }).catch(() => {});
 
     return { success: true, data: updatedEvenement };
   } catch (error) {

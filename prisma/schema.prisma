@@ -14,16 +14,18 @@ datasource db {
 // ============================================
 
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String    @unique
-  emailVerified DateTime?
-  password      String
-  image         String?
-  role          Role      @default(EDITOR)
-  isActive      Boolean   @default(true)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id              String    @id @default(cuid())
+  name            String?
+  email           String    @unique
+  emailVerified   DateTime?
+  password        String
+  image           String?
+  role            Role      @default(EDITOR)
+  isActive        Boolean   @default(true)
+  telephone       String?
+  whatsappApiKey  String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   accounts Account[]
   sessions Session[]
@@ -529,4 +531,25 @@ enum PromotionCible {
   ACTIVITE
   BIEN_ETRE
   EVENEMENT
+}
+
+// ============================================
+// JOURNAL D'ACTIVITÉS
+// ============================================
+
+model ActivityLog {
+  id          String   @id @default(cuid())
+  userId      String
+  userName    String?
+  userEmail   String?
+  action      String
+  entityType  String
+  entityId    String?
+  description String   @db.Text
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([entityType, createdAt])
+  @@index([createdAt])
 }

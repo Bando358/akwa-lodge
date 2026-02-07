@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { MediaType, AnnonceCible, AnnoncePosition } from "@prisma/client";
+import { logActivity } from "@/lib/activity-log";
 
 // Schéma de validation pour les annonces
 const annonceSchema = z.object({
@@ -159,6 +160,8 @@ export async function createAnnonce(data: AnnonceInput) {
     revalidatePath("/admin/annonces");
     revalidatePath("/");
 
+    logActivity({ action: "CREATE", entityType: "Annonce", entityId: annonce.id, description: "Annonce creee : " + validatedData.titre }).catch(() => {});
+
     return { success: true, data: annonce };
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -202,6 +205,8 @@ export async function updateAnnonce(id: string, data: Partial<AnnonceInput>) {
     revalidatePath(`/admin/annonces/${id}`);
     revalidatePath("/");
 
+    logActivity({ action: "UPDATE", entityType: "Annonce", entityId: id, description: "Annonce modifiee : " + annonce.titre }).catch(() => {});
+
     return { success: true, data: annonce };
   } catch (error) {
     console.error("Erreur lors de la mise à jour de l'annonce:", error);
@@ -218,6 +223,8 @@ export async function deleteAnnonce(id: string) {
 
     revalidatePath("/admin/annonces");
     revalidatePath("/");
+
+    logActivity({ action: "DELETE", entityType: "Annonce", entityId: id, description: "Annonce supprimee" }).catch(() => {});
 
     return { success: true };
   } catch (error) {
@@ -245,6 +252,8 @@ export async function toggleAnnonceActive(id: string) {
     revalidatePath("/admin/annonces");
     revalidatePath("/");
 
+    logActivity({ action: "TOGGLE", entityType: "Annonce", entityId: id, description: "Annonce " + (updatedAnnonce.isActive ? "activee" : "desactivee") + " : " + updatedAnnonce.titre }).catch(() => {});
+
     return { success: true, data: updatedAnnonce };
   } catch (error) {
     console.error("Erreur lors du changement de statut:", error);
@@ -270,6 +279,8 @@ export async function toggleAnnoncePinned(id: string) {
 
     revalidatePath("/admin/annonces");
     revalidatePath("/");
+
+    logActivity({ action: "TOGGLE", entityType: "Annonce", entityId: id, description: "Annonce " + (updatedAnnonce.isPinned ? "epinglee" : "desepinglee") + " : " + updatedAnnonce.titre }).catch(() => {});
 
     return { success: true, data: updatedAnnonce };
   } catch (error) {
@@ -344,6 +355,8 @@ export async function duplicateAnnonce(id: string) {
     });
 
     revalidatePath("/admin/annonces");
+
+    logActivity({ action: "CREATE", entityType: "Annonce", entityId: newAnnonce.id, description: "Annonce dupliquee : " + annonce.titre }).catch(() => {});
 
     return { success: true, data: newAnnonce };
   } catch (error) {

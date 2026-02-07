@@ -1,7 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Settings, Save, RotateCcw, Loader2 } from "lucide-react";
+import {
+  Settings,
+  Save,
+  RotateCcw,
+  Loader2,
+  MessageCircle,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -29,6 +35,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { getSettings, setSettings, resetSettings } from "@/lib/actions/settings";
+import Link from "next/link";
 
 export default function ParametresPage() {
   const [settings, setSettingsState] = useState<Record<string, string>>({});
@@ -63,7 +70,7 @@ export default function ParametresPage() {
     try {
       const result = await setSettings(settings);
       if (result.success) {
-        toast.success("Paramètres enregistrés");
+        toast.success("Parametres enregistres");
       } else {
         toast.error(result.error || "Erreur lors de l'enregistrement");
       }
@@ -79,10 +86,10 @@ export default function ParametresPage() {
     try {
       const result = await resetSettings();
       if (result.success) {
-        toast.success("Paramètres réinitialisés");
+        toast.success("Parametres reinitialises");
         loadSettings();
       } else {
-        toast.error(result.error || "Erreur lors de la réinitialisation");
+        toast.error(result.error || "Erreur lors de la reinitialisation");
       }
     } catch {
       toast.error("Une erreur est survenue");
@@ -101,15 +108,15 @@ export default function ParametresPage() {
 
   return (
     <div className="p-6 space-y-6">
-      {/* En-tête */}
+      {/* En-tete */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-serif font-bold flex items-center gap-3">
             <Settings className="h-8 w-8 text-primary" />
-            Paramètres
+            Parametres
           </h1>
           <p className="mt-1 text-muted-foreground">
-            Configurez les paramètres de votre site
+            Configurez les parametres de votre site
           </p>
         </div>
         <div className="flex gap-2">
@@ -117,21 +124,21 @@ export default function ParametresPage() {
             <AlertDialogTrigger asChild>
               <Button variant="outline" disabled={isResetting}>
                 <RotateCcw className="mr-2 h-4 w-4" />
-                Réinitialiser
+                Reinitialiser
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Réinitialiser les paramètres</AlertDialogTitle>
+                <AlertDialogTitle>Reinitialiser les parametres</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Êtes-vous sûr de vouloir réinitialiser tous les paramètres aux
-                  valeurs par défaut ? Cette action est irréversible.
+                  Etes-vous sur de vouloir reinitialiser tous les parametres aux
+                  valeurs par defaut ? Cette action est irreversible.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Annuler</AlertDialogCancel>
                 <AlertDialogAction onClick={handleReset}>
-                  Réinitialiser
+                  Reinitialiser
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
@@ -148,21 +155,25 @@ export default function ParametresPage() {
       </div>
 
       <Tabs defaultValue="general" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="general">Général</TabsTrigger>
+        <TabsList className="flex-wrap">
+          <TabsTrigger value="general">General</TabsTrigger>
           <TabsTrigger value="contact">Contact</TabsTrigger>
           <TabsTrigger value="horaires">Horaires</TabsTrigger>
-          <TabsTrigger value="social">Réseaux sociaux</TabsTrigger>
+          <TabsTrigger value="social">Reseaux sociaux</TabsTrigger>
           <TabsTrigger value="seo">SEO</TabsTrigger>
-          <TabsTrigger value="features">Fonctionnalités</TabsTrigger>
+          <TabsTrigger value="features">Fonctionnalites</TabsTrigger>
+          <TabsTrigger value="notifications" className="flex items-center gap-1.5">
+            <MessageCircle className="h-4 w-4" />
+            Notifications
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="general">
           <Card>
             <CardHeader>
-              <CardTitle>Informations générales</CardTitle>
+              <CardTitle>Informations generales</CardTitle>
               <CardDescription>
-                Les informations de base de votre établissement
+                Les informations de base de votre etablissement
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -219,9 +230,9 @@ export default function ParametresPage() {
         <TabsContent value="contact">
           <Card>
             <CardHeader>
-              <CardTitle>Coordonnées</CardTitle>
+              <CardTitle>Coordonnees</CardTitle>
               <CardDescription>
-                Les informations de contact de votre établissement
+                Les informations de contact de votre etablissement
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -236,7 +247,7 @@ export default function ParametresPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="contact_phone">Téléphone</Label>
+                  <Label htmlFor="contact_phone">Telephone</Label>
                   <Input
                     id="contact_phone"
                     value={settings.contact_phone || ""}
@@ -275,7 +286,7 @@ export default function ParametresPage() {
             <CardContent className="space-y-4">
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="horaires_reception">Réception</Label>
+                  <Label htmlFor="horaires_reception">Reception</Label>
                   <Input
                     id="horaires_reception"
                     value={settings.horaires_reception || ""}
@@ -335,7 +346,7 @@ export default function ParametresPage() {
         <TabsContent value="social">
           <Card>
             <CardHeader>
-              <CardTitle>Réseaux sociaux</CardTitle>
+              <CardTitle>Reseaux sociaux</CardTitle>
               <CardDescription>
                 Liens vers vos profils sociaux
               </CardDescription>
@@ -404,9 +415,9 @@ export default function ParametresPage() {
         <TabsContent value="seo">
           <Card>
             <CardHeader>
-              <CardTitle>Référencement (SEO)</CardTitle>
+              <CardTitle>Referencement (SEO)</CardTitle>
               <CardDescription>
-                Optimisez votre visibilité sur les moteurs de recherche
+                Optimisez votre visibilite sur les moteurs de recherche
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -428,7 +439,7 @@ export default function ParametresPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="seo_keywords">Mots-clés</Label>
+                <Label htmlFor="seo_keywords">Mots-cles</Label>
                 <Input
                   id="seo_keywords"
                   value={settings.seo_keywords || ""}
@@ -443,17 +454,17 @@ export default function ParametresPage() {
         <TabsContent value="features">
           <Card>
             <CardHeader>
-              <CardTitle>Fonctionnalités</CardTitle>
+              <CardTitle>Fonctionnalites</CardTitle>
               <CardDescription>
-                Activez ou désactivez des fonctionnalités du site
+                Activez ou desactivez des fonctionnalites du site
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between rounded-lg border p-4">
                 <div className="space-y-0.5">
-                  <Label>Réservations en ligne</Label>
+                  <Label>Reservations en ligne</Label>
                   <p className="text-sm text-muted-foreground">
-                    Permettre aux visiteurs de faire des demandes de réservation
+                    Permettre aux visiteurs de faire des demandes de reservation
                   </p>
                 </div>
                 <Switch
@@ -467,7 +478,7 @@ export default function ParametresPage() {
                 <div className="space-y-0.5">
                   <Label>Newsletter</Label>
                   <p className="text-sm text-muted-foreground">
-                    Afficher le formulaire d&apos;inscription à la newsletter
+                    Afficher le formulaire d&apos;inscription a la newsletter
                   </p>
                 </div>
                 <Switch
@@ -481,7 +492,7 @@ export default function ParametresPage() {
                 <div className="space-y-0.5">
                   <Label>Chat en direct</Label>
                   <p className="text-sm text-muted-foreground">
-                    Activer le widget de chat (nécessite une configuration externe)
+                    Activer le widget de chat (necessite une configuration externe)
                   </p>
                 </div>
                 <Switch
@@ -490,6 +501,97 @@ export default function ParametresPage() {
                     handleChange("feature_chat", checked ? "true" : "false")
                   }
                 />
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* ============ ONGLET NOTIFICATIONS ============ */}
+        <TabsContent value="notifications" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-3">
+                <MessageCircle className="h-6 w-6" />
+                Notifications WhatsApp via CallMeBot
+              </CardTitle>
+              <CardDescription>
+                Recevez des alertes WhatsApp pour chaque nouvelle reservation,
+                message de contact ou inscription newsletter. Chaque administrateur
+                configure ses propres notifications depuis son profil.
+              </CardDescription>
+            </CardHeader>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Comment activer les notifications (2 min)</CardTitle>
+              <CardDescription>
+                CallMeBot est un service gratuit qui envoie des messages WhatsApp.
+                Chaque admin doit suivre ces etapes une seule fois.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="flex gap-4">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-bold">
+                  1
+                </div>
+                <div className="space-y-1">
+                  <p className="font-medium">Envoyer un message d&apos;autorisation</p>
+                  <p className="text-sm text-muted-foreground">
+                    Sur votre WhatsApp, envoyez le message suivant au numero{" "}
+                    <strong>+34 623 78 95 80</strong> :
+                  </p>
+                  <p className="mt-2 rounded-md bg-muted px-3 py-2 text-sm font-mono">
+                    I allow callmebot to send me messages
+                  </p>
+                </div>
+              </div>
+
+              <Separator />
+
+              <div className="flex gap-4">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-bold">
+                  2
+                </div>
+                <div className="space-y-1">
+                  <p className="font-medium">Recuperer votre cle API</p>
+                  <p className="text-sm text-muted-foreground">
+                    CallMeBot vous repondra avec votre <strong>cle API</strong> (un numero comme 123456).
+                    Notez-le.
+                  </p>
+                </div>
+              </div>
+
+              <Separator />
+
+              <div className="flex gap-4">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-bold">
+                  3
+                </div>
+                <div className="space-y-1">
+                  <p className="font-medium">Configurer votre profil</p>
+                  <p className="text-sm text-muted-foreground">
+                    Allez dans{" "}
+                    <strong>Utilisateurs</strong>, modifiez votre compte et renseignez
+                    votre numero WhatsApp et la cle API CallMeBot. Vous pouvez
+                    aussi tester l&apos;envoi depuis cette page.
+                  </p>
+                  <Button variant="outline" size="sm" className="mt-2" asChild>
+                    <Link href="/admin/utilisateurs">
+                      Aller aux utilisateurs
+                    </Link>
+                  </Button>
+                </div>
+              </div>
+
+              <Separator />
+
+              <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-900 dark:bg-blue-950">
+                <p className="text-sm text-blue-800 dark:text-blue-200">
+                  <strong>Bon a savoir :</strong> Les notifications sont envoyees a tous
+                  les administrateurs actifs qui ont configure leur numero et cle API.
+                  Chaque admin recoit ses propres alertes.
+                </p>
               </div>
             </CardContent>
           </Card>

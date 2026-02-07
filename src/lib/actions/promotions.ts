@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { PromotionType, PromotionCible } from "@prisma/client";
+import { logActivity } from "@/lib/activity-log";
 
 // Schéma de validation pour les promotions
 const promotionSchema = z.object({
@@ -212,6 +213,8 @@ export async function createPromotion(data: PromotionInput) {
     revalidatePath("/admin/promotions");
     revalidatePath("/");
 
+    logActivity({ action: "CREATE", entityType: "Promotion", entityId: promotion.id, description: "Promotion creee : " + validatedData.nom }).catch(() => {});
+
     return { success: true, data: promotion };
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -258,6 +261,8 @@ export async function updatePromotion(id: string, data: Partial<PromotionInput>)
     revalidatePath(`/admin/promotions/${id}`);
     revalidatePath("/");
 
+    logActivity({ action: "UPDATE", entityType: "Promotion", entityId: id, description: "Promotion modifiee : " + promotion.nom }).catch(() => {});
+
     return { success: true, data: promotion };
   } catch (error) {
     console.error("Erreur lors de la mise à jour de la promotion:", error);
@@ -292,6 +297,8 @@ export async function deletePromotion(id: string) {
     revalidatePath("/admin/promotions");
     revalidatePath("/");
 
+    logActivity({ action: "DELETE", entityType: "Promotion", entityId: id, description: "Promotion supprimee : " + promotion.nom }).catch(() => {});
+
     return { success: true };
   } catch (error) {
     console.error("Erreur lors de la suppression de la promotion:", error);
@@ -317,6 +324,8 @@ export async function togglePromotionActive(id: string) {
 
     revalidatePath("/admin/promotions");
     revalidatePath("/");
+
+    logActivity({ action: "TOGGLE", entityType: "Promotion", entityId: id, description: "Promotion " + (updatedPromotion.isActive ? "activee" : "desactivee") + " : " + updatedPromotion.nom }).catch(() => {});
 
     return { success: true, data: updatedPromotion };
   } catch (error) {
