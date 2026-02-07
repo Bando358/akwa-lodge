@@ -7,6 +7,7 @@ import {
   RotateCcw,
   Loader2,
   MessageCircle,
+  Bell,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -35,6 +36,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { getSettings, setSettings, resetSettings } from "@/lib/actions/settings";
+import { PushNotificationToggle } from "@/components/admin/push-notification-toggle";
 import Link from "next/link";
 
 export default function ParametresPage() {
@@ -508,6 +510,24 @@ export default function ParametresPage() {
 
         {/* ============ ONGLET NOTIFICATIONS ============ */}
         <TabsContent value="notifications" className="space-y-6">
+          {/* Push Notifications */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-3">
+                <Bell className="h-6 w-6" />
+                Notifications Push
+              </CardTitle>
+              <CardDescription>
+                Recevez des notifications push meme quand l&apos;onglet est ferme.
+                Les notifications arrivent directement sur votre appareil.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <PushNotificationToggle />
+            </CardContent>
+          </Card>
+
+          {/* WhatsApp */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-3">

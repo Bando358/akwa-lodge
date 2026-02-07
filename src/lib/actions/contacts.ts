@@ -6,6 +6,7 @@ import { z } from "zod";
 import { notifyNewContact } from "@/lib/mail";
 import { notifyWhatsAppNewContact } from "@/lib/whatsapp";
 import { logActivity } from "@/lib/activity-log";
+import { sendPushToAdmins } from "@/lib/push";
 
 // Schéma de validation pour les contacts
 const contactSchema = z.object({
@@ -47,6 +48,11 @@ export async function createContact(data: ContactInput) {
     };
     notifyNewContact(notifData).catch(() => {});
     notifyWhatsAppNewContact(notifData).catch(() => {});
+    sendPushToAdmins(
+      "Nouveau message",
+      `${validatedData.nom} - ${validatedData.sujet}`,
+      "/admin/contacts"
+    ).catch(() => {});
 
     return { success: true, data: contact };
   } catch (error) {

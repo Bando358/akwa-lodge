@@ -6,6 +6,7 @@ import { z } from "zod";
 import { notifyNewNewsletter } from "@/lib/mail";
 import { notifyWhatsAppNewNewsletter } from "@/lib/whatsapp";
 import { logActivity } from "@/lib/activity-log";
+import { sendPushToAdmins } from "@/lib/push";
 
 // Schéma de validation pour les abonnés newsletter
 const newsletterSchema = z.object({
@@ -93,6 +94,11 @@ export async function subscribeNewsletter(data: any) {
     // Notifications aux admins (en arrière-plan, sans bloquer)
     notifyNewNewsletter({ email: validatedData.email }).catch(() => {});
     notifyWhatsAppNewNewsletter({ email: validatedData.email }).catch(() => {});
+    sendPushToAdmins(
+      "Nouvel abonne newsletter",
+      validatedData.email,
+      "/admin/newsletter"
+    ).catch(() => {});
 
     return { success: true, data: subscriber };
   } catch (error) {

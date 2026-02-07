@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { MediaType, AnnonceCible, AnnoncePosition } from "@prisma/client";
 import { logActivity } from "@/lib/activity-log";
+import { sendPushToVisitors } from "@/lib/push";
 
 // Schéma de validation pour les annonces
 const annonceSchema = z.object({
@@ -161,6 +162,11 @@ export async function createAnnonce(data: AnnonceInput) {
     revalidatePath("/");
 
     logActivity({ action: "CREATE", entityType: "Annonce", entityId: annonce.id, description: "Annonce creee : " + validatedData.titre }).catch(() => {});
+
+    // Notifier les visiteurs si l'annonce est active et commence maintenant
+    if (validatedData.isActive && validatedData.dateDebut <= new Date()) {
+      sendPushToVisitors("Nouvelle annonce", validatedData.titre, "/").catch(() => {});
+    }
 
     return { success: true, data: annonce };
   } catch (error) {

@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { PromotionType, PromotionCible } from "@prisma/client";
 import { logActivity } from "@/lib/activity-log";
+import { sendPushToVisitors } from "@/lib/push";
 
 // Schéma de validation pour les promotions
 const promotionSchema = z.object({
@@ -214,6 +215,15 @@ export async function createPromotion(data: PromotionInput) {
     revalidatePath("/");
 
     logActivity({ action: "CREATE", entityType: "Promotion", entityId: promotion.id, description: "Promotion creee : " + validatedData.nom }).catch(() => {});
+
+    // Notifier les visiteurs si la promotion est active
+    if (validatedData.isActive) {
+      sendPushToVisitors(
+        "Nouvelle promotion",
+        validatedData.nom + (validatedData.codePromo ? " - Code : " + validatedData.codePromo.toUpperCase() : ""),
+        "/"
+      ).catch(() => {});
+    }
 
     return { success: true, data: promotion };
   } catch (error) {

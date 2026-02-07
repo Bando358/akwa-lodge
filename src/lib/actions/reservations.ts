@@ -7,6 +7,7 @@ import { ReservationStatut } from "@prisma/client";
 import { notifyNewReservation } from "@/lib/mail";
 import { notifyWhatsAppNewReservation } from "@/lib/whatsapp";
 import { logActivity } from "@/lib/activity-log";
+import { sendPushToAdmins } from "@/lib/push";
 
 // Schéma de validation pour les réservations
 const reservationSchema = z.object({
@@ -112,6 +113,11 @@ export async function createReservation(data: any) {
     };
     notifyNewReservation(notifData).catch(() => {});
     notifyWhatsAppNewReservation(notifData).catch(() => {});
+    sendPushToAdmins(
+      "Nouvelle reservation",
+      `${validatedData.prenom} ${validatedData.nom} - ${validatedData.dateArrivee.toLocaleDateString("fr-FR")} au ${validatedData.dateDepart.toLocaleDateString("fr-FR")}`,
+      "/admin/reservations"
+    ).catch(() => {});
 
     return { success: true, data: reservation };
   } catch (error) {
