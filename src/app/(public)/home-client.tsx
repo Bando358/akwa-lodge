@@ -15,6 +15,7 @@ import {
   Sparkles,
   Umbrella,
   Wine,
+  Tag,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -52,10 +53,40 @@ type IntroImage = {
   alt: string;
 };
 
+type Promotion = {
+  id: string;
+  nom: string;
+  type: string;
+  valeur: number;
+  cible: string;
+  chambreId: string | null;
+  codePromo: string | null;
+};
+
+function getPromoForRoom(roomId: string, promotions: Promotion[]): Promotion | null {
+  return promotions.find((p) => p.chambreId === roomId) || promotions.find((p) => !p.chambreId) || null;
+}
+
+function computeDiscountedPrice(prix: number, promo: Promotion): number | null {
+  if (promo.type === "POURCENTAGE") return Math.round(prix * (1 - promo.valeur / 100));
+  if (promo.type === "MONTANT_FIXE") {
+    const r = prix - promo.valeur;
+    return r > 0 ? Math.round(r) : null;
+  }
+  return null;
+}
+
+function formatPromoLabel(promo: Promotion): string {
+  if (promo.type === "POURCENTAGE") return `-${promo.valeur}%`;
+  if (promo.type === "MONTANT_FIXE") return `-${new Intl.NumberFormat("fr-FR").format(promo.valeur)} FCFA`;
+  return promo.nom;
+}
+
 interface HomePageClientProps {
   initialBannerImages: BannerImage[];
   featuredRooms: FeaturedRoom[];
   introImages: IntroImage[];
+  promotions?: Promotion[];
 }
 
 // Composant diaporama pour les cartes de chambres
@@ -204,6 +235,7 @@ export function HomePageClient({
   initialBannerImages,
   featuredRooms,
   introImages,
+  promotions = [],
 }: HomePageClientProps) {
   // Démarrage à l'index 0 (l'ordre est déjà mélangé côté serveur via shuffleArray)
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -547,59 +579,86 @@ export function HomePageClient({
 
           {featuredRooms.length > 0 ? (
             <StaggerContainer className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
-              {featuredRooms.map((room) => (
-                <StaggerItem key={room.id}>
-                  <motion.div
-                    whileHover={{ y: -10 }}
-                    transition={{ type: "spring", stiffness: 300 }}
-                  >
-                    <Card className="group overflow-hidden hover:shadow-luxury transition-all duration-300 h-full">
-                      <div className="aspect-[4/3] relative overflow-hidden bg-gradient-to-br from-primary/20 to-secondary/20">
-                        <RoomImageSlideshow
-                          images={room.images}
-                          alt={room.nom}
-                        />
-                        <div className="absolute top-4 left-4">
-                          <Badge
-                            variant="secondary"
-                            className="bg-white/90 text-primary backdrop-blur-sm"
-                          >
-                            {room.type}
-                          </Badge>
-                        </div>
-                        <div className="absolute top-4 right-4">
-                          <Badge className="bg-secondary text-secondary-foreground">
-                            <Star className="mr-1 h-3 w-3" />
-                            Vedette
-                          </Badge>
-                        </div>
-                      </div>
-                      <CardContent className="p-6">
-                        <h3 className="font-serif text-xl font-semibold mb-2 group-hover:text-primary transition-colors">
-                          {room.nom}
-                        </h3>
-                        <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                          {room.descriptionCourte}
-                        </p>
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <span className="text-2xl font-bold text-primary">
-                              {new Intl.NumberFormat("fr-FR").format(room.prix)}
-                            </span>
-                            <span className="text-sm text-muted-foreground">
-                              {" "}
-                              FCFA / nuit
-                            </span>
+              {featuredRooms.map((room) => {
+                const promo = getPromoForRoom(room.id, promotions);
+                const prixPromo = promo ? computeDiscountedPrice(room.prix, promo) : null;
+                return (
+                  <StaggerItem key={room.id}>
+                    <motion.div
+                      whileHover={{ y: -10 }}
+                      transition={{ type: "spring", stiffness: 300 }}
+                    >
+                      <Card className="group overflow-hidden hover:shadow-luxury transition-all duration-300 h-full">
+                        <div className="aspect-[4/3] relative overflow-hidden bg-gradient-to-br from-primary/20 to-secondary/20">
+                          <RoomImageSlideshow
+                            images={room.images}
+                            alt={room.nom}
+                          />
+                          <div className="absolute top-4 left-4 flex gap-2">
+                            <Badge
+                              variant="secondary"
+                              className="bg-white/90 text-primary backdrop-blur-sm"
+                            >
+                              {room.type}
+                            </Badge>
+                            {promo && (
+                              <Badge className="bg-red-500 text-white">
+                                <Tag className="mr-1 h-3 w-3" />
+                                {formatPromoLabel(promo)}
+                              </Badge>
+                            )}
                           </div>
-                          <Button asChild size="sm">
-                            <Link href={`/hebergement/${room.slug}`}>Voir</Link>
-                          </Button>
+                          <div className="absolute top-4 right-4">
+                            <Badge className="bg-secondary text-secondary-foreground">
+                              <Star className="mr-1 h-3 w-3" />
+                              Vedette
+                            </Badge>
+                          </div>
                         </div>
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-                </StaggerItem>
-              ))}
+                        <CardContent className="p-6">
+                          <h3 className="font-serif text-xl font-semibold mb-2 group-hover:text-primary transition-colors">
+                            {room.nom}
+                          </h3>
+                          <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+                            {room.descriptionCourte}
+                          </p>
+                          <div className="flex items-center justify-between">
+                            <div>
+                              {prixPromo ? (
+                                <>
+                                  <span className="text-sm text-muted-foreground line-through">
+                                    {new Intl.NumberFormat("fr-FR").format(room.prix)} FCFA
+                                  </span>
+                                  <div>
+                                    <span className="text-2xl font-bold text-red-600">
+                                      {new Intl.NumberFormat("fr-FR").format(prixPromo)}
+                                    </span>
+                                    <span className="text-sm text-muted-foreground">
+                                      {" "}FCFA / nuit
+                                    </span>
+                                  </div>
+                                </>
+                              ) : (
+                                <>
+                                  <span className="text-2xl font-bold text-primary">
+                                    {new Intl.NumberFormat("fr-FR").format(room.prix)}
+                                  </span>
+                                  <span className="text-sm text-muted-foreground">
+                                    {" "}FCFA / nuit
+                                  </span>
+                                </>
+                              )}
+                            </div>
+                            <Button asChild size="sm">
+                              <Link href={`/hebergement/${room.slug}`}>Voir</Link>
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </motion.div>
+                  </StaggerItem>
+                );
+              })}
             </StaggerContainer>
           ) : (
             <div className="text-center py-12">

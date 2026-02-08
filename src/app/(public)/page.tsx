@@ -1,6 +1,8 @@
 import { getImages } from "@/lib/actions/images";
 import { getChambres } from "@/lib/actions/chambres";
+import { getPromotionsActives } from "@/lib/actions/promotions";
 import { HomePageClient } from "./home-client";
+import { AnnoncesSection } from "@/components/public/annonces-section";
 
 // Empêcher le cache statique pour que le shuffle s'exécute à chaque requête
 export const dynamic = "force-dynamic";
@@ -17,10 +19,11 @@ function shuffleArray<T>(array: T[]): T[] {
 
 // Server Component - pré-charge les données côté serveur
 export default async function HomePage() {
-  // Charger les images et chambres vedettes côté serveur
-  const [imagesResult, chambresResult] = await Promise.all([
+  // Charger les images, chambres vedettes et promotions côté serveur
+  const [imagesResult, chambresResult, promosResult] = await Promise.all([
     getImages({ categorie: "accueil" }),
     getChambres({ isActive: true, isFeatured: true, limit: 6 }),
+    getPromotionsActives("CHAMBRE"),
   ]);
 
   // Mélanger les images côté serveur pour un affichage aléatoire
@@ -60,11 +63,29 @@ export default async function HomePage() {
       )
     : [];
 
+  // Sérialiser les promotions pour le Client Component
+  const promotions =
+    promosResult.success && promosResult.data
+      ? promosResult.data.map((p) => ({
+          id: p.id,
+          nom: p.nom,
+          type: p.type,
+          valeur: Number(p.valeur),
+          cible: p.cible,
+          chambreId: p.chambreId,
+          codePromo: p.codePromo,
+        }))
+      : [];
+
   return (
-    <HomePageClient
-      initialBannerImages={bannerImages}
-      featuredRooms={featuredRooms}
-      introImages={allChambreImages}
-    />
+    <>
+      <HomePageClient
+        initialBannerImages={bannerImages}
+        featuredRooms={featuredRooms}
+        introImages={allChambreImages}
+        promotions={promotions}
+      />
+      <AnnoncesSection position="ACCUEIL" variant="dialog" />
+    </>
   );
 }

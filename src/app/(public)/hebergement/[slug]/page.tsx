@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getChambreBySlug } from "@/lib/actions/chambres";
+import { getPromotionsActives } from "@/lib/actions/promotions";
 import { ChambreDetailClient } from "./chambre-detail-client";
 
 interface PageProps {
@@ -25,7 +26,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function ChambreDetailPage({ params }: PageProps) {
   const { slug } = await params;
-  const result = await getChambreBySlug(slug);
+  const [result, promosResult] = await Promise.all([
+    getChambreBySlug(slug),
+    getPromotionsActives("CHAMBRE"),
+  ]);
 
   if (!result.success || !result.data) {
     notFound();
@@ -58,5 +62,25 @@ export default async function ChambreDetailPage({ params }: PageProps) {
     })),
   };
 
-  return <ChambreDetailClient chambre={chambreData} />;
+  // Trouver la promo applicable à cette chambre
+  const allPromos =
+    promosResult.success && promosResult.data
+      ? promosResult.data.map((p) => ({
+          id: p.id,
+          nom: p.nom,
+          type: p.type,
+          valeur: Number(p.valeur),
+          cible: p.cible,
+          chambreId: p.chambreId,
+          codePromo: p.codePromo,
+        }))
+      : [];
+
+  // Promo spécifique à cette chambre OU promo générale CHAMBRE
+  const promo =
+    allPromos.find((p) => p.chambreId === chambre.id) ||
+    allPromos.find((p) => !p.chambreId) ||
+    null;
+
+  return <ChambreDetailClient chambre={chambreData} promotion={promo} />;
 }

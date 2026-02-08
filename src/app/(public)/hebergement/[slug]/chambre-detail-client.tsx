@@ -46,11 +46,34 @@ interface Chambre {
   images: ChambreImage[];
 }
 
-interface ChambreDetailClientProps {
-  chambre: Chambre;
+interface Promotion {
+  id: string;
+  nom: string;
+  type: string;
+  valeur: number;
+  cible: string;
+  chambreId: string | null;
+  codePromo: string | null;
 }
 
-export function ChambreDetailClient({ chambre }: ChambreDetailClientProps) {
+interface ChambreDetailClientProps {
+  chambre: Chambre;
+  promotion?: Promotion | null;
+}
+
+function computeDiscountedPrice(prix: number, promo: Promotion): number | null {
+  if (promo.type === "POURCENTAGE") return Math.round(prix * (1 - promo.valeur / 100));
+  if (promo.type === "MONTANT_FIXE") { const r = prix - promo.valeur; return r > 0 ? Math.round(r) : null; }
+  return null;
+}
+
+function formatPromoLabel(promo: Promotion): string {
+  if (promo.type === "POURCENTAGE") return `-${promo.valeur}%`;
+  if (promo.type === "MONTANT_FIXE") return `-${new Intl.NumberFormat("fr-FR").format(promo.valeur)} FCFA`;
+  return promo.nom;
+}
+
+export function ChambreDetailClient({ chambre, promotion }: ChambreDetailClientProps) {
   const [showVideoDialog, setShowVideoDialog] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
   const [hasSeenVideo, setHasSeenVideo] = useState(false);
@@ -347,11 +370,39 @@ export function ChambreDetailClient({ chambre }: ChambreDetailClientProps) {
 
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 lg:gap-6">
                 <div className="text-right">
-                  <div className="text-3xl sm:text-4xl font-bold">
-                    {new Intl.NumberFormat("fr-FR").format(chambre.prix)}
-                    <span className="text-lg font-normal text-white/80"> FCFA</span>
-                  </div>
-                  <div className="text-white/60 text-sm">par nuit</div>
+                  {(() => {
+                    const prixPromo = promotion ? computeDiscountedPrice(chambre.prix, promotion) : null;
+                    return prixPromo ? (
+                      <>
+                        <div className="flex items-center justify-end gap-2 mb-1">
+                          <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded">
+                            {formatPromoLabel(promotion!)}
+                          </span>
+                        </div>
+                        <div className="text-white/60 text-sm line-through">
+                          {new Intl.NumberFormat("fr-FR").format(chambre.prix)} FCFA
+                        </div>
+                        <div className="text-3xl sm:text-4xl font-bold text-secondary">
+                          {new Intl.NumberFormat("fr-FR").format(prixPromo)}
+                          <span className="text-lg font-normal text-white/80"> FCFA</span>
+                        </div>
+                        <div className="text-white/60 text-sm">par nuit</div>
+                        {promotion!.codePromo && (
+                          <div className="text-secondary text-sm mt-1 font-mono">
+                            Code: {promotion!.codePromo}
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <div className="text-3xl sm:text-4xl font-bold">
+                          {new Intl.NumberFormat("fr-FR").format(chambre.prix)}
+                          <span className="text-lg font-normal text-white/80"> FCFA</span>
+                        </div>
+                        <div className="text-white/60 text-sm">par nuit</div>
+                      </>
+                    );
+                  })()}
                   {chambre.prixWeekend && (
                     <div className="text-white/80 text-sm mt-1">
                       Week-end: {new Intl.NumberFormat("fr-FR").format(chambre.prixWeekend)} FCFA

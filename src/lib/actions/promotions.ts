@@ -1,6 +1,15 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+
+// Revalider toutes les pages publiques qui affichent des promotions
+function revalidatePublicPromoPages() {
+  revalidatePath("/");
+  revalidatePath("/hebergement");
+  revalidatePath("/restauration");
+  revalidatePath("/activites");
+  revalidatePath("/evenements");
+}
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { PromotionType, PromotionCible } from "@prisma/client";
@@ -113,17 +122,22 @@ export async function getPromotionsActives(cible?: PromotionCible) {
 
     const promotions = await prisma.promotion.findMany({
       where: {
-        isActive: true,
-        dateDebut: { lte: now },
-        dateFin: { gte: now },
-        ...(cible && { cible }),
-        // Vérifier que la limite d'utilisation n'est pas atteinte
-        OR: [
-          { usageMax: null },
+        AND: [
+          { isActive: true },
+          { dateDebut: { lte: now } },
+          { dateFin: { gte: now } },
+          // Inclure les promotions ciblées ET celles pour TOUS
+          ...(cible ? [{ OR: [{ cible }, { cible: "TOUS" as PromotionCible }] }] : []),
+          // Vérifier que la limite d'utilisation n'est pas atteinte
           {
-            usageMax: {
-              gt: prisma.promotion.fields.usageActuel,
-            },
+            OR: [
+              { usageMax: null },
+              {
+                usageMax: {
+                  gt: prisma.promotion.fields.usageActuel,
+                },
+              },
+            ],
           },
         ],
       },
@@ -212,7 +226,7 @@ export async function createPromotion(data: PromotionInput) {
     });
 
     revalidatePath("/admin/promotions");
-    revalidatePath("/");
+    revalidatePublicPromoPages();
 
     logActivity({ action: "CREATE", entityType: "Promotion", entityId: promotion.id, description: "Promotion creee : " + validatedData.nom }).catch(() => {});
 
@@ -269,7 +283,7 @@ export async function updatePromotion(id: string, data: Partial<PromotionInput>)
 
     revalidatePath("/admin/promotions");
     revalidatePath(`/admin/promotions/${id}`);
-    revalidatePath("/");
+    revalidatePublicPromoPages();
 
     logActivity({ action: "UPDATE", entityType: "Promotion", entityId: id, description: "Promotion modifiee : " + promotion.nom }).catch(() => {});
 
@@ -305,7 +319,7 @@ export async function deletePromotion(id: string) {
     });
 
     revalidatePath("/admin/promotions");
-    revalidatePath("/");
+    revalidatePublicPromoPages();
 
     logActivity({ action: "DELETE", entityType: "Promotion", entityId: id, description: "Promotion supprimee : " + promotion.nom }).catch(() => {});
 
@@ -333,7 +347,7 @@ export async function togglePromotionActive(id: string) {
     });
 
     revalidatePath("/admin/promotions");
-    revalidatePath("/");
+    revalidatePublicPromoPages();
 
     logActivity({ action: "TOGGLE", entityType: "Promotion", entityId: id, description: "Promotion " + (updatedPromotion.isActive ? "activee" : "desactivee") + " : " + updatedPromotion.nom }).catch(() => {});
 

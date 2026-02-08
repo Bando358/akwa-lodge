@@ -1,10 +1,11 @@
 import { getAnnoncesActives } from "@/lib/actions/annonces";
 import { AnnoncePosition } from "@prisma/client";
 import { AnnoncesCarousel, AnnonceCard } from "./annonce-card";
+import { AnnonceDialog } from "./annonce-dialog";
 
 interface AnnoncesSectionProps {
   position: AnnoncePosition;
-  variant?: "carousel" | "grid" | "banner";
+  variant?: "carousel" | "grid" | "banner" | "dialog";
   title?: string;
   maxItems?: number;
   className?: string;
@@ -33,6 +34,10 @@ export async function AnnoncesSection({
         }
       : null,
   }));
+
+  if (variant === "dialog") {
+    return <AnnonceDialog annonces={annonces} storageKey={position} />;
+  }
 
   if (variant === "banner" && annonces.length > 0) {
     return (

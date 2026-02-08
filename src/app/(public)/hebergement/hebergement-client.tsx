@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { BedDouble, Users, Maximize, ArrowRight, Star } from "lucide-react";
+import { BedDouble, Users, Maximize, ArrowRight, Star, Tag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -29,8 +29,19 @@ interface Chambre {
   images?: { url: string }[];
 }
 
+interface Promotion {
+  id: string;
+  nom: string;
+  type: string;
+  valeur: number;
+  cible: string;
+  chambreId: string | null;
+  codePromo: string | null;
+}
+
 interface HebergementClientProps {
   chambres: Chambre[];
+  promotions?: Promotion[];
 }
 
 // Ordre de priorité des types
@@ -41,7 +52,33 @@ const typeOrder: Record<string, number> = {
   "Chambre": 4,
 };
 
-export function HebergementClient({ chambres }: HebergementClientProps) {
+function getPromoForChambre(chambreId: string, promotions: Promotion[]): Promotion | null {
+  // D'abord chercher une promo ciblant cette chambre spécifiquement
+  const specific = promotions.find((p) => p.chambreId === chambreId);
+  if (specific) return specific;
+  // Sinon une promo générale CHAMBRE (sans chambreId spécifique)
+  const general = promotions.find((p) => !p.chambreId);
+  return general || null;
+}
+
+function computeDiscountedPrice(prix: number, promo: Promotion): number | null {
+  if (promo.type === "POURCENTAGE") {
+    return Math.round(prix * (1 - promo.valeur / 100));
+  }
+  if (promo.type === "MONTANT_FIXE") {
+    const result = prix - promo.valeur;
+    return result > 0 ? Math.round(result) : null;
+  }
+  return null;
+}
+
+function formatPromoLabel(promo: Promotion): string {
+  if (promo.type === "POURCENTAGE") return `-${promo.valeur}%`;
+  if (promo.type === "MONTANT_FIXE") return `-${new Intl.NumberFormat("fr-FR").format(promo.valeur)} FCFA`;
+  return promo.nom;
+}
+
+export function HebergementClient({ chambres, promotions = [] }: HebergementClientProps) {
   // Grouper les chambres par type
   const chambresByType = useMemo(() => {
     const grouped: Record<string, Chambre[]> = {};
@@ -146,6 +183,23 @@ export function HebergementClient({ chambres }: HebergementClientProps) {
                                   <BedDouble className="h-16 w-16 text-primary/30" />
                                 </div>
                               )}
+                              {/* Badge promo */}
+                              {(() => {
+                                const promo = getPromoForChambre(chambre.id, promotions);
+                                return promo ? (
+                                  <motion.div
+                                    className="absolute top-4 left-4"
+                                    initial={{ opacity: 0, scale: 0 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    transition={{ delay: 0.2 }}
+                                  >
+                                    <Badge className="bg-red-500 text-white text-sm font-bold">
+                                      <Tag className="mr-1 h-3 w-3" />
+                                      {formatPromoLabel(promo)}
+                                    </Badge>
+                                  </motion.div>
+                                ) : null;
+                              })()}
                               {chambre.isFeatured && (
                                 <motion.div
                                   className="absolute top-4 right-4"
@@ -183,25 +237,48 @@ export function HebergementClient({ chambres }: HebergementClientProps) {
                               </div>
 
                               {/* Prix et CTA */}
-                              <div className="flex items-center justify-between pt-4 border-t">
-                                <div>
-                                  <span className="text-2xl font-bold text-primary">
-                                    {new Intl.NumberFormat("fr-FR").format(
-                                      Number(chambre.prix)
-                                    )}
-                                  </span>
-                                  <span className="text-sm text-muted-foreground">
-                                    {" "}
-                                    FCFA / nuit
-                                  </span>
-                                </div>
-                                <Button asChild size="sm">
-                                  <Link href={`/hebergement/${chambre.slug}`}>
-                                    Voir
-                                    <ArrowRight className="ml-1 h-4 w-4" />
-                                  </Link>
-                                </Button>
-                              </div>
+                              {(() => {
+                                const promo = getPromoForChambre(chambre.id, promotions);
+                                const prixOriginal = Number(chambre.prix);
+                                const prixPromo = promo ? computeDiscountedPrice(prixOriginal, promo) : null;
+
+                                return (
+                                  <div className="flex items-center justify-between pt-4 border-t">
+                                    <div>
+                                      {prixPromo ? (
+                                        <>
+                                          <span className="text-sm text-muted-foreground line-through">
+                                            {new Intl.NumberFormat("fr-FR").format(prixOriginal)} FCFA
+                                          </span>
+                                          <div>
+                                            <span className="text-2xl font-bold text-red-600">
+                                              {new Intl.NumberFormat("fr-FR").format(prixPromo)}
+                                            </span>
+                                            <span className="text-sm text-muted-foreground">
+                                              {" "}FCFA / nuit
+                                            </span>
+                                          </div>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <span className="text-2xl font-bold text-primary">
+                                            {new Intl.NumberFormat("fr-FR").format(prixOriginal)}
+                                          </span>
+                                          <span className="text-sm text-muted-foreground">
+                                            {" "}FCFA / nuit
+                                          </span>
+                                        </>
+                                      )}
+                                    </div>
+                                    <Button asChild size="sm">
+                                      <Link href={`/hebergement/${chambre.slug}`}>
+                                        Voir
+                                        <ArrowRight className="ml-1 h-4 w-4" />
+                                      </Link>
+                                    </Button>
+                                  </div>
+                                );
+                              })()}
                             </CardContent>
                           </Card>
                         </AnimatedCard>
