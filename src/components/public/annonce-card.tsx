@@ -203,11 +203,11 @@ export function AnnonceCard({
         )}
         style={customStyle}
       >
-        <div className="container mx-auto px-4 py-2 sm:py-3">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-4">
+        <div className="container mx-auto px-3 py-1.5 sm:px-4 sm:py-3">
+          <div className="flex items-center justify-between gap-2 sm:gap-4">
             <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
               {annonce.mediaType === "IMAGE" && annonce.mediaUrl && (
-                <div className="relative h-10 w-10 sm:h-12 sm:w-12 rounded-lg overflow-hidden shrink-0">
+                <div className="relative h-8 w-8 sm:h-12 sm:w-12 rounded-lg overflow-hidden shrink-0">
                   <Image
                     src={annonce.mediaUrl}
                     alt={annonce.titre}
@@ -216,36 +216,29 @@ export function AnnonceCard({
                   />
                 </div>
               )}
-              <div className="min-w-0 flex-1">
-                <p className="font-bold text-sm sm:text-base truncate">{annonce.titre}</p>
-                {annonce.description && (
-                  <p className="text-xs sm:text-sm opacity-80 line-clamp-1 hidden sm:block">
-                    {annonce.description}
-                  </p>
-                )}
-              </div>
+              <p className="font-bold text-xs sm:text-base truncate min-w-0 flex-1">{annonce.titre}</p>
               {annonce.promotion && (
-                <Badge variant="secondary" className="text-sm sm:text-lg font-bold shrink-0">
+                <Badge variant="secondary" className="text-xs sm:text-lg font-bold shrink-0">
                   {formatPromoValue(annonce.promotion)}
                 </Badge>
               )}
             </div>
-            <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
               {annonce.promotion?.codePromo && (
                 <code className="bg-background/20 px-2 py-1 rounded font-mono text-xs sm:text-sm hidden sm:block">
                   {annonce.promotion.codePromo}
                 </code>
               )}
               {annonce.lien && (
-                <Button variant="secondary" size="sm" asChild className="text-xs sm:text-sm">
+                <Button variant="secondary" size="sm" asChild className="h-7 text-[10px] px-2 sm:h-9 sm:text-sm sm:px-3">
                   <Link href={annonce.lien} target="_blank">
                     {annonce.boutonTexte || "Voir"}
                   </Link>
                 </Button>
               )}
               {onClose && (
-                <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8" onClick={onClose}>
-                  <X className="h-4 w-4" />
+                <Button variant="ghost" size="icon" className="h-6 w-6 sm:h-8 sm:w-8" onClick={onClose}>
+                  <X className="h-3 w-3 sm:h-4 sm:w-4" />
                 </Button>
               )}
             </div>
