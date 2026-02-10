@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Plus, CalendarDays } from "lucide-react";
 import { getEvenements } from "@/lib/actions/evenements";
+import { getUserRole } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -12,7 +13,10 @@ import {
 import { EvenementsTable } from "./evenements-table";
 
 export default async function EvenementsPage() {
-  const result = await getEvenements();
+  const [result, userRole] = await Promise.all([
+    getEvenements(),
+    getUserRole(),
+  ]);
   const evenementsData = result.success ? result.data : [];
 
   // Convertir les Decimal en number pour le Client Component
@@ -106,7 +110,7 @@ export default async function EvenementsPage() {
         </CardHeader>
         <CardContent>
           {evenements && evenements.length > 0 ? (
-            <EvenementsTable evenements={evenements} />
+            <EvenementsTable evenements={evenements} userRole={userRole ?? undefined} />
           ) : (
             <div className="text-center py-12">
               <CalendarDays className="mx-auto h-12 w-12 text-muted-foreground/50" />

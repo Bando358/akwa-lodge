@@ -75,9 +75,11 @@ type Plat = {
 export function PlatsTable({
   plats,
   categories,
+  userRole,
 }: {
   plats: Plat[];
   categories: Categorie[];
+  userRole?: string;
 }) {
   const router = useRouter();
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -291,14 +293,18 @@ export function PlatsTable({
                         </>
                       )}
                     </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      className="text-red-600"
-                      onClick={() => setDeleteId(plat.id)}
-                    >
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      Supprimer
-                    </DropdownMenuItem>
+                    {userRole === "ADMIN" && (
+                      <>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          className="text-red-600"
+                          onClick={() => setDeleteId(plat.id)}
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Supprimer
+                        </DropdownMenuItem>
+                      </>
+                    )}
                   </DropdownMenuContent>
                 </DropdownMenu>
               </TableCell>

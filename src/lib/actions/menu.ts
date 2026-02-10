@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { logActivity } from "@/lib/activity-log";
+import { requireAdmin } from "@/lib/auth";
 
 // Schéma de validation pour les catégories de menu
 const menuCategorieSchema = z.object({
@@ -141,6 +142,11 @@ export async function updateMenuCategorie(id: string, data: Partial<MenuCategori
 // Supprimer une catégorie
 export async function deleteMenuCategorie(id: string) {
   try {
+    const adminCheck = await requireAdmin();
+    if (!adminCheck.authorized) {
+      return { success: false, error: adminCheck.error };
+    }
+
     await prisma.menuCategorie.delete({
       where: { id },
     });
@@ -293,6 +299,11 @@ export async function updatePlat(id: string, data: Partial<PlatInput>) {
 // Supprimer un plat
 export async function deletePlat(id: string) {
   try {
+    const adminCheck = await requireAdmin();
+    if (!adminCheck.authorized) {
+      return { success: false, error: adminCheck.error };
+    }
+
     await prisma.plat.delete({
       where: { id },
     });

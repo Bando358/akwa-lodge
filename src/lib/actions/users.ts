@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { Role } from "@prisma/client";
 import bcrypt from "bcryptjs";
-import { auth } from "@/lib/auth";
+import { auth, requireAdmin } from "@/lib/auth";
 import { logActivity } from "@/lib/activity-log";
 
 // Schéma de validation pour les utilisateurs
@@ -253,6 +253,11 @@ export async function updateUser(id: string, data: UpdateUserInput) {
 // Supprimer un utilisateur
 export async function deleteUser(id: string) {
   try {
+    const adminCheck = await requireAdmin();
+    if (!adminCheck.authorized) {
+      return { success: false, error: adminCheck.error };
+    }
+
     // Vérifier qu'on ne supprime pas le dernier admin
     const adminCount = await prisma.user.count({
       where: { role: "ADMIN", isActive: true },

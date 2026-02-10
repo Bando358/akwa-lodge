@@ -1,5 +1,6 @@
 import { Percent, Tag, Clock, CheckCircle } from "lucide-react";
 import { getPromotions, getPromotionsStats } from "@/lib/actions/promotions";
+import { getUserRole } from "@/lib/auth";
 import {
   Card,
   CardContent,
@@ -10,9 +11,10 @@ import {
 import { PromotionsTable } from "./promotions-table";
 
 export default async function PromotionsPage() {
-  const [promotionsResult, statsResult] = await Promise.all([
+  const [promotionsResult, statsResult, userRole] = await Promise.all([
     getPromotions({ includeRelations: true }),
     getPromotionsStats(),
+    getUserRole(),
   ]);
 
   const promotions = promotionsResult.success ? promotionsResult.data : [];
@@ -104,7 +106,7 @@ export default async function PromotionsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <PromotionsTable promotions={serializedPromotions} />
+          <PromotionsTable promotions={serializedPromotions} userRole={userRole ?? undefined} />
         </CardContent>
       </Card>
     </div>

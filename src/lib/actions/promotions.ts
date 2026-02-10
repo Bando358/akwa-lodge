@@ -15,6 +15,7 @@ import { z } from "zod";
 import { PromotionType, PromotionCible } from "@prisma/client";
 import { logActivity } from "@/lib/activity-log";
 import { sendPushToVisitors } from "@/lib/push";
+import { requireAdmin } from "@/lib/auth";
 
 // Schéma de validation pour les promotions
 const promotionSchema = z.object({
@@ -297,6 +298,11 @@ export async function updatePromotion(id: string, data: Partial<PromotionInput>)
 // Supprimer une promotion
 export async function deletePromotion(id: string) {
   try {
+    const adminCheck = await requireAdmin();
+    if (!adminCheck.authorized) {
+      return { success: false, error: adminCheck.error };
+    }
+
     // Vérifier si des annonces sont liées
     const promotion = await prisma.promotion.findUnique({
       where: { id },

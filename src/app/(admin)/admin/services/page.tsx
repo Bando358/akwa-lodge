@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Plus, UtensilsCrossed } from "lucide-react";
 import { getServices } from "@/lib/actions/services";
+import { getUserRole } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -12,7 +13,10 @@ import {
 import { ServicesTable } from "./services-table";
 
 export default async function ServicesPage() {
-  const result = await getServices();
+  const [result, userRole] = await Promise.all([
+    getServices(),
+    getUserRole(),
+  ]);
   const servicesData = result.success ? result.data : [];
 
   // Convertir les Decimal en number pour le Client Component
@@ -102,7 +106,7 @@ export default async function ServicesPage() {
         </CardHeader>
         <CardContent>
           {services && services.length > 0 ? (
-            <ServicesTable services={services} />
+            <ServicesTable services={services} userRole={userRole ?? undefined} />
           ) : (
             <div className="text-center py-12">
               <UtensilsCrossed className="mx-auto h-12 w-12 text-muted-foreground/50" />

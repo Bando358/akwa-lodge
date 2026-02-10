@@ -88,7 +88,7 @@ const cibleLabels: Record<PromotionCible, string> = {
   EVENEMENT: "Événements",
 };
 
-export function PromotionsTable({ promotions }: { promotions: Promotion[] }) {
+export function PromotionsTable({ promotions, userRole }: { promotions: Promotion[]; userRole?: string }) {
   const router = useRouter();
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -325,14 +325,18 @@ export function PromotionsTable({ promotions }: { promotions: Promotion[] }) {
                           </>
                         )}
                       </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        className="text-red-600"
-                        onClick={() => setDeleteId(promo.id)}
-                      >
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Supprimer
-                      </DropdownMenuItem>
+                      {userRole === "ADMIN" && (
+                        <>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            className="text-red-600"
+                            onClick={() => setDeleteId(promo.id)}
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Supprimer
+                          </DropdownMenuItem>
+                        </>
+                      )}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </TableCell>

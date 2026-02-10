@@ -82,7 +82,7 @@ const sujetColors: Record<ContactSujet, string> = {
   AUTRE: "bg-gray-100 text-gray-700",
 };
 
-export function ContactsTable({ contacts }: { contacts: Contact[] }) {
+export function ContactsTable({ contacts, userRole }: { contacts: Contact[]; userRole?: string }) {
   const router = useRouter();
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [viewContact, setViewContact] = useState<Contact | null>(null);
@@ -193,14 +193,18 @@ export function ContactsTable({ contacts }: { contacts: Contact[] }) {
                       <Eye className="mr-2 h-4 w-4" />
                       Lire
                     </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      className="text-red-600"
-                      onClick={() => setDeleteId(contact.id)}
-                    >
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      Supprimer
-                    </DropdownMenuItem>
+                    {userRole === "ADMIN" && (
+                      <>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          className="text-red-600"
+                          onClick={() => setDeleteId(contact.id)}
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Supprimer
+                        </DropdownMenuItem>
+                      </>
+                    )}
                   </DropdownMenuContent>
                 </DropdownMenu>
               </TableCell>

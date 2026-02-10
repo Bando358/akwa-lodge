@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { signOut } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import { NotificationSound } from "@/components/admin/notification-sound";
 import {
   LayoutDashboard,
@@ -122,6 +122,8 @@ const bottomMenuItems = [
 
 function SidebarContentComponent() {
   const pathname = usePathname();
+  const { data: session } = useSession();
+  const isAdmin = session?.user?.role === "ADMIN";
 
   return (
     <>
@@ -174,6 +176,20 @@ function SidebarContentComponent() {
         <SidebarMenu>
           {bottomMenuItems.map((item) => {
             const isActive = pathname === item.href;
+
+            if (!isAdmin) {
+              return (
+                <SidebarMenuItem key={item.href}>
+                  <SidebarMenuButton
+                    disabled
+                    className="opacity-40 cursor-not-allowed"
+                  >
+                    <item.icon className="h-5 w-5" />
+                    <span>{item.title}</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              );
+            }
 
             return (
               <SidebarMenuItem key={item.href}>

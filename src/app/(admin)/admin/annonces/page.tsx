@@ -1,5 +1,6 @@
 import { Megaphone, Image as ImageIcon, Video, Clock, CheckCircle } from "lucide-react";
 import { getAnnonces, getAnnoncesStats } from "@/lib/actions/annonces";
+import { getUserRole } from "@/lib/auth";
 import {
   Card,
   CardContent,
@@ -10,9 +11,10 @@ import {
 import { AnnoncesTable } from "./annonces-table";
 
 export default async function AnnoncesPage() {
-  const [annoncesResult, statsResult] = await Promise.all([
+  const [annoncesResult, statsResult, userRole] = await Promise.all([
     getAnnonces({ includePromotion: true }),
     getAnnoncesStats(),
+    getUserRole(),
   ]);
 
   const annonces = annoncesResult.success ? annoncesResult.data : [];
@@ -127,7 +129,7 @@ export default async function AnnoncesPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <AnnoncesTable annonces={serializedAnnonces} />
+          <AnnoncesTable annonces={serializedAnnonces} userRole={userRole ?? undefined} />
         </CardContent>
       </Card>
     </div>

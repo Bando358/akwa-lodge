@@ -74,6 +74,24 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   },
 });
 
+// Verifier que l'utilisateur connecte est ADMIN
+export async function requireAdmin(): Promise<{ authorized: true; userId: string } | { authorized: false; error: string }> {
+  const session = await auth();
+  if (!session?.user) {
+    return { authorized: false, error: "Non authentifié" };
+  }
+  if (session.user.role !== "ADMIN") {
+    return { authorized: false, error: "Action réservée aux administrateurs" };
+  }
+  return { authorized: true, userId: session.user.id };
+}
+
+// Recuperer le role de l'utilisateur connecte
+export async function getUserRole(): Promise<string | null> {
+  const session = await auth();
+  return session?.user?.role ?? null;
+}
+
 // Types pour étendre les types NextAuth
 declare module "next-auth" {
   interface User {

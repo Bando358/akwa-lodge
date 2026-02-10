@@ -23,15 +23,16 @@ export function PushNotificationBanner() {
   }, []);
 
   const registerServiceWorker = useCallback(async () => {
-    await navigator.serviceWorker.register("/firebase-messaging-sw.js");
+    const registration = await navigator.serviceWorker.register("/firebase-messaging-sw.js");
+    return registration;
   }, []);
 
   const handleAccept = async () => {
     try {
-      await registerServiceWorker();
+      const registration = await registerServiceWorker();
 
       const { requestNotificationPermission } = await import("@/lib/firebase");
-      const token = await requestNotificationPermission();
+      const token = await requestNotificationPermission(registration);
 
       if (token) {
         await fetch("/api/push/subscribe", {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
 import { Mail, Trash2, Download, Loader2, UserMinus, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -50,6 +51,8 @@ type Subscriber = {
 };
 
 export default function NewsletterPage() {
+  const { data: session } = useSession();
+  const isAdmin = session?.user?.role === "ADMIN";
   const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
   const [stats, setStats] = useState<{ total: number; actifs: number; inactifs: number } | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -246,7 +249,7 @@ export default function NewsletterPage() {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-[250px]"
               />
-              {selectedIds.length > 0 && (
+              {isAdmin && selectedIds.length > 0 && (
                 <Button
                   variant="destructive"
                   size="sm"

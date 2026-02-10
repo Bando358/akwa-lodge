@@ -8,6 +8,7 @@ import { notifyNewReservation } from "@/lib/mail";
 import { notifyWhatsAppNewReservation } from "@/lib/whatsapp";
 import { logActivity } from "@/lib/activity-log";
 import { sendPushToAdmins } from "@/lib/push";
+import { requireAdmin } from "@/lib/auth";
 
 // Schéma de validation pour les réservations
 const reservationSchema = z.object({
@@ -182,6 +183,11 @@ export async function updateReservationStatut(id: string, statut: ReservationSta
 // Supprimer une réservation
 export async function deleteReservation(id: string) {
   try {
+    const adminCheck = await requireAdmin();
+    if (!adminCheck.authorized) {
+      return { success: false, error: adminCheck.error };
+    }
+
     await prisma.reservation.delete({
       where: { id },
     });

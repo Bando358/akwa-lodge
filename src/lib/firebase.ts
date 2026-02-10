@@ -24,18 +24,49 @@ async function getFirebaseMessaging(): Promise<Messaging | null> {
   return messaging;
 }
 
-export async function requestNotificationPermission(): Promise<string | null> {
+export async function requestNotificationPermission(
+  swRegistration?: ServiceWorkerRegistration
+): Promise<string | null> {
   try {
     const permission = await Notification.requestPermission();
-    if (permission !== "granted") return null;
+    if (permission !== "granted") {
+      console.warn("[Firebase] Permission refusee");
+      return null;
+    }
 
     const msg = await getFirebaseMessaging();
-    if (!msg) return null;
+    if (!msg) {
+      console.warn("[Firebase] Messaging non supporte");
+      return null;
+    }
+
+    // Utiliser le SW fourni ou en chercher un existant (scope "/" par defaut)
+    const registration = swRegistration || await navigator.serviceWorker.getRegistration("/");
+
+    if (!registration) {
+      console.error("[Firebase] Aucun service worker trouve");
+      return null;
+    }
+
+    // Attendre que le SW soit actif
+    if (!registration.active) {
+      await new Promise<void>((resolve) => {
+        const sw = registration.installing || registration.waiting;
+        if (!sw) { resolve(); return; }
+        sw.addEventListener("statechange", () => {
+          if (sw.state === "activated") resolve();
+        });
+      });
+    }
+
+    console.log("[Firebase] SW actif, demande du token...");
 
     const token = await getToken(msg, {
       vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY,
+      serviceWorkerRegistration: registration,
     });
 
+    console.log("[Firebase] Token obtenu:", token ? token.substring(0, 20) + "..." : "ECHEC");
     return token;
   } catch (error) {
     console.error("[Firebase] Erreur lors de la demande de permission:", error);

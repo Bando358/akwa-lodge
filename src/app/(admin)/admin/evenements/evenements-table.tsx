@@ -79,7 +79,7 @@ const typeColors: Record<EvenementType, string> = {
   RECEPTION: "bg-cyan-100 text-cyan-700",
 };
 
-export function EvenementsTable({ evenements }: { evenements: Evenement[] }) {
+export function EvenementsTable({ evenements, userRole }: { evenements: Evenement[]; userRole?: string }) {
   const router = useRouter();
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -259,14 +259,18 @@ export function EvenementsTable({ evenements }: { evenements: Evenement[] }) {
                         </>
                       )}
                     </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      className="text-red-600"
-                      onClick={() => setDeleteId(evenement.id)}
-                    >
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      Supprimer
-                    </DropdownMenuItem>
+                    {userRole === "ADMIN" && (
+                      <>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          className="text-red-600"
+                          onClick={() => setDeleteId(evenement.id)}
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Supprimer
+                        </DropdownMenuItem>
+                      </>
+                    )}
                   </DropdownMenuContent>
                 </DropdownMenu>
               </TableCell>

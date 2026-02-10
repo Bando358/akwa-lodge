@@ -25,10 +25,10 @@ export function PushNotificationToggle() {
   const handleEnable = async () => {
     setIsLoading(true);
     try {
-      await registerServiceWorker();
+      const registration = await registerServiceWorker();
 
       const { requestNotificationPermission } = await import("@/lib/firebase");
-      const token = await requestNotificationPermission();
+      const token = await requestNotificationPermission(registration);
 
       if (!token) {
         toast.error("Permission refusee ou erreur lors de l'obtention du token");

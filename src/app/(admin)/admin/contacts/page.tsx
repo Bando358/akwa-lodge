@@ -1,5 +1,6 @@
 import { MessageSquare, Mail, MailOpen } from "lucide-react";
 import { getContacts } from "@/lib/actions/contacts";
+import { getUserRole } from "@/lib/auth";
 import {
   Card,
   CardContent,
@@ -10,7 +11,10 @@ import {
 import { ContactsTable } from "./contacts-table";
 
 export default async function ContactsPage() {
-  const result = await getContacts();
+  const [result, userRole] = await Promise.all([
+    getContacts(),
+    getUserRole(),
+  ]);
   const contacts = result.success ? result.data : [];
 
   const unread = contacts?.filter((c) => !c.isRead).length || 0;
@@ -75,7 +79,7 @@ export default async function ContactsPage() {
         </CardHeader>
         <CardContent>
           {contacts && contacts.length > 0 ? (
-            <ContactsTable contacts={contacts} />
+            <ContactsTable contacts={contacts} userRole={userRole ?? undefined} />
           ) : (
             <div className="text-center py-12">
               <MessageSquare className="mx-auto h-12 w-12 text-muted-foreground/50" />

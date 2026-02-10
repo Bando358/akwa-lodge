@@ -1,13 +1,13 @@
 /* eslint-disable no-undef */
-importScripts("https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js");
-importScripts("https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging-compat.js");
+importScripts("https://www.gstatic.com/firebasejs/11.7.1/firebase-app-compat.js");
+importScripts("https://www.gstatic.com/firebasejs/11.7.1/firebase-messaging-compat.js");
 
 firebase.initializeApp({
-  apiKey: self.__FIREBASE_CONFIG__?.apiKey || "",
-  authDomain: self.__FIREBASE_CONFIG__?.authDomain || "",
-  projectId: self.__FIREBASE_CONFIG__?.projectId || "",
-  messagingSenderId: self.__FIREBASE_CONFIG__?.messagingSenderId || "",
-  appId: self.__FIREBASE_CONFIG__?.appId || "",
+  apiKey: "AIzaSyBc9emuVxOlaa5XgXzdkRgIrLNK_YSagw8",
+  authDomain: "akwa-luxury-lodge.firebaseapp.com",
+  projectId: "akwa-luxury-lodge",
+  messagingSenderId: "981098503253",
+  appId: "1:981098503253:web:bb1b1fa9715a7e596ac8dc",
 });
 
 const messaging = firebase.messaging();

@@ -76,7 +76,7 @@ const typeColors: Record<ServiceType, string> = {
   AUTRE: "bg-gray-100 text-gray-700",
 };
 
-export function ServicesTable({ services }: { services: Service[] }) {
+export function ServicesTable({ services, userRole }: { services: Service[]; userRole?: string }) {
   const router = useRouter();
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -230,14 +230,18 @@ export function ServicesTable({ services }: { services: Service[] }) {
                         </>
                       )}
                     </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      className="text-red-600"
-                      onClick={() => setDeleteId(service.id)}
-                    >
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      Supprimer
-                    </DropdownMenuItem>
+                    {userRole === "ADMIN" && (
+                      <>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          className="text-red-600"
+                          onClick={() => setDeleteId(service.id)}
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Supprimer
+                        </DropdownMenuItem>
+                      </>
+                    )}
                   </DropdownMenuContent>
                 </DropdownMenu>
               </TableCell>

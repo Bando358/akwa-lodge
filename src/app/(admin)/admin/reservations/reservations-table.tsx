@@ -86,7 +86,7 @@ const statutColors: Record<ReservationStatut, string> = {
   TERMINEE: "bg-gray-100 text-gray-700",
 };
 
-export function ReservationsTable({ reservations }: { reservations: Reservation[] }) {
+export function ReservationsTable({ reservations, userRole }: { reservations: Reservation[]; userRole?: string }) {
   const router = useRouter();
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [viewReservation, setViewReservation] = useState<Reservation | null>(null);
@@ -226,21 +226,33 @@ export function ReservationsTable({ reservations }: { reservations: Reservation[
                       </>
                     )}
                     {reservation.statut === "CONFIRMEE" && (
-                      <DropdownMenuItem
-                        onClick={() => handleChangeStatut(reservation.id, "TERMINEE")}
-                      >
-                        <Clock className="mr-2 h-4 w-4" />
-                        Marquer terminée
-                      </DropdownMenuItem>
+                      <>
+                        <DropdownMenuItem
+                          onClick={() => handleChangeStatut(reservation.id, "ANNULEE")}
+                        >
+                          <X className="mr-2 h-4 w-4 text-red-600" />
+                          Annuler
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => handleChangeStatut(reservation.id, "TERMINEE")}
+                        >
+                          <Clock className="mr-2 h-4 w-4" />
+                          Marquer terminée
+                        </DropdownMenuItem>
+                      </>
                     )}
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      className="text-red-600"
-                      onClick={() => setDeleteId(reservation.id)}
-                    >
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      Supprimer
-                    </DropdownMenuItem>
+                    {userRole === "ADMIN" && (
+                      <>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          className="text-red-600"
+                          onClick={() => setDeleteId(reservation.id)}
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Supprimer
+                        </DropdownMenuItem>
+                      </>
+                    )}
                   </DropdownMenuContent>
                 </DropdownMenu>
               </TableCell>

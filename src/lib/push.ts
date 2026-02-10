@@ -3,12 +3,17 @@ import { prisma } from "@/lib/prisma";
 
 async function sendPush(type: "admin" | "visitor", title: string, body: string, url?: string) {
   try {
-    if (!admin.apps.length) return;
+    if (!admin.apps.length) {
+      console.warn("[Push] Firebase Admin non initialise, abandon envoi");
+      return;
+    }
 
     const subscriptions = await prisma.pushSubscription.findMany({
       where: { type },
       select: { id: true, token: true },
     });
+
+    console.log(`[Push] ${type}: ${subscriptions.length} abonne(s) trouve(s)`);
 
     if (subscriptions.length === 0) return;
 
@@ -21,6 +26,15 @@ async function sendPush(type: "admin" | "visitor", title: string, body: string, 
       webpush: {
         fcmOptions: { link: url || "/" },
       },
+    });
+
+    console.log(`[Push] ${type}: ${response.successCount} succes, ${response.failureCount} echec(s)`);
+
+    // Log les erreurs detaillees
+    response.responses.forEach((resp, idx) => {
+      if (!resp.success && resp.error) {
+        console.error(`[Push] Token ${idx} erreur:`, resp.error.code, resp.error.message);
+      }
     });
 
     // Supprimer les tokens invalides
@@ -37,6 +51,7 @@ async function sendPush(type: "admin" | "visitor", title: string, body: string, 
     });
 
     if (invalidTokenIds.length > 0) {
+      console.log(`[Push] Suppression de ${invalidTokenIds.length} token(s) invalide(s)`);
       await prisma.pushSubscription.deleteMany({
         where: { id: { in: invalidTokenIds } },
       });

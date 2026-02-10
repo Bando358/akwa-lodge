@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { logActivity } from "@/lib/activity-log";
+import { requireAdmin } from "@/lib/auth";
 
 // Schéma de validation pour les paramètres
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -152,20 +153,23 @@ export async function setSetting(key: string, value: string, options?: {
 // Mettre à jour plusieurs paramètres
 export async function setSettings(settings: Record<string, string>) {
   try {
-    const updates = Object.entries(settings).map(([key, value]) =>
-      prisma.siteSettings.upsert({
-        where: { key },
-        update: { value },
-        create: { key, value },
-      })
-    );
+    const entries = Object.entries(settings);
 
-    await prisma.$transaction(updates);
+    // Upserts individuels (evite les problemes de transaction avec Neon pooler)
+    await Promise.all(
+      entries.map(([key, value]) =>
+        prisma.siteSettings.upsert({
+          where: { key },
+          update: { value },
+          create: { key, value },
+        })
+      )
+    );
 
     revalidatePath("/admin/parametres");
     revalidatePath("/");
 
-    logActivity({ action: "UPDATE", entityType: "Setting", description: "Parametres modifies (" + Object.keys(settings).length + ")" }).catch(() => {});
+    logActivity({ action: "UPDATE", entityType: "Setting", description: "Parametres modifies (" + entries.length + ")" }).catch(() => {});
 
     return { success: true };
   } catch (error) {
@@ -177,6 +181,11 @@ export async function setSettings(settings: Record<string, string>) {
 // Supprimer un paramètre
 export async function deleteSetting(key: string) {
   try {
+    const adminCheck = await requireAdmin();
+    if (!adminCheck.authorized) {
+      return { success: false, error: adminCheck.error };
+    }
+
     await prisma.siteSettings.delete({
       where: { key },
     });
@@ -208,15 +217,15 @@ export async function getSettingsByGroupe(groupe: string) {
 // Réinitialiser les paramètres par défaut
 export async function resetSettings() {
   try {
-    const updates = Object.entries(defaultSettings).map(([key, value]) =>
-      prisma.siteSettings.upsert({
-        where: { key },
-        update: { value: String(value) },
-        create: { key, value: String(value) },
-      })
+    await Promise.all(
+      Object.entries(defaultSettings).map(([key, value]) =>
+        prisma.siteSettings.upsert({
+          where: { key },
+          update: { value: String(value) },
+          create: { key, value: String(value) },
+        })
+      )
     );
-
-    await prisma.$transaction(updates);
 
     revalidatePath("/admin/parametres");
     revalidatePath("/");

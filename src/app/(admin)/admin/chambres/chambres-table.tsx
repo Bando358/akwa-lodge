@@ -61,7 +61,11 @@ interface ChambresTableProps {
   chambres: Chambre[];
 }
 
-export function ChambresTable({ chambres }: ChambresTableProps) {
+interface ChambresTableFullProps extends ChambresTableProps {
+  userRole?: string;
+}
+
+export function ChambresTable({ chambres, userRole }: ChambresTableFullProps) {
   const router = useRouter();
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -232,14 +236,18 @@ export function ChambresTable({ chambres }: ChambresTableProps) {
                         </>
                       )}
                     </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      className="text-destructive focus:text-destructive"
-                      onClick={() => setDeleteId(chambre.id)}
-                    >
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      Supprimer
-                    </DropdownMenuItem>
+                    {userRole === "ADMIN" && (
+                      <>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          className="text-destructive focus:text-destructive"
+                          onClick={() => setDeleteId(chambre.id)}
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Supprimer
+                        </DropdownMenuItem>
+                      </>
+                    )}
                   </DropdownMenuContent>
                 </DropdownMenu>
               </TableCell>

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Plus, BedDouble } from "lucide-react";
 import { getChambres } from "@/lib/actions/chambres";
+import { getUserRole } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -12,7 +13,10 @@ import {
 import { ChambresTable } from "./chambres-table";
 
 export default async function ChambresPage() {
-  const result = await getChambres();
+  const [result, userRole] = await Promise.all([
+    getChambres(),
+    getUserRole(),
+  ]);
   const chambresData = result.success ? result.data : [];
 
   // Convertir les Decimal en number pour le Client Component
@@ -91,7 +95,7 @@ export default async function ChambresPage() {
         </CardHeader>
         <CardContent>
           {chambres && chambres.length > 0 ? (
-            <ChambresTable chambres={chambres} />
+            <ChambresTable chambres={chambres} userRole={userRole ?? undefined} />
           ) : (
             <div className="text-center py-12">
               <BedDouble className="mx-auto h-12 w-12 text-muted-foreground/50" />

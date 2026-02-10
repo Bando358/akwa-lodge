@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Plus, Star } from "lucide-react";
 import { getTemoignages, getTemoignageStats } from "@/lib/actions/temoignages";
+import { getUserRole } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -12,9 +13,10 @@ import {
 import { TemoignagesTable } from "./temoignages-table";
 
 export default async function TemoignagesPage() {
-  const [temoignagesResult, statsResult] = await Promise.all([
+  const [temoignagesResult, statsResult, userRole] = await Promise.all([
     getTemoignages(),
     getTemoignageStats(),
+    getUserRole(),
   ]);
 
   const temoignages = temoignagesResult.success ? temoignagesResult.data : [];
@@ -102,7 +104,7 @@ export default async function TemoignagesPage() {
         </CardHeader>
         <CardContent>
           {temoignages && temoignages.length > 0 ? (
-            <TemoignagesTable temoignages={temoignages} />
+            <TemoignagesTable temoignages={temoignages} userRole={userRole ?? undefined} />
           ) : (
             <div className="text-center py-12">
               <Star className="mx-auto h-12 w-12 text-muted-foreground/50" />

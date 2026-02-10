@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { logActivity } from "@/lib/activity-log";
+import { requireAdmin } from "@/lib/auth";
 
 // Validation personnalisée pour les URLs (accepte les URLs complètes et les chemins relatifs)
 const urlOrPathSchema = z.string().refine(
@@ -198,6 +199,11 @@ export async function updateImage(id: string, data: Partial<ImageInput>) {
 // Supprimer une image
 export async function deleteImage(id: string) {
   try {
+    const adminCheck = await requireAdmin();
+    if (!adminCheck.authorized) {
+      return { success: false, error: adminCheck.error };
+    }
+
     await prisma.image.delete({
       where: { id },
     });
@@ -217,6 +223,11 @@ export async function deleteImage(id: string) {
 // Supprimer plusieurs images
 export async function deleteImages(ids: string[]) {
   try {
+    const adminCheck = await requireAdmin();
+    if (!adminCheck.authorized) {
+      return { success: false, error: adminCheck.error };
+    }
+
     await prisma.image.deleteMany({
       where: { id: { in: ids } },
     });

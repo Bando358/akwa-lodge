@@ -1,5 +1,6 @@
 import { CalendarCheck } from "lucide-react";
 import { getReservations, getReservationStats } from "@/lib/actions/reservations";
+import { getUserRole } from "@/lib/auth";
 import {
   Card,
   CardContent,
@@ -10,9 +11,10 @@ import {
 import { ReservationsTable } from "./reservations-table";
 
 export default async function ReservationsPage() {
-  const [reservationsResult, statsResult] = await Promise.all([
+  const [reservationsResult, statsResult, userRole] = await Promise.all([
     getReservations(),
     getReservationStats(),
+    getUserRole(),
   ]);
 
   const reservations = reservationsResult.success ? reservationsResult.data : [];
@@ -103,7 +105,7 @@ export default async function ReservationsPage() {
         </CardHeader>
         <CardContent>
           {reservations && reservations.length > 0 ? (
-            <ReservationsTable reservations={reservations} />
+            <ReservationsTable reservations={reservations} userRole={userRole ?? undefined} />
           ) : (
             <div className="text-center py-12">
               <CalendarCheck className="mx-auto h-12 w-12 text-muted-foreground/50" />

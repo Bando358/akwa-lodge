@@ -1,5 +1,3 @@
-"use server";
-
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
@@ -8,6 +6,8 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { token, type } = body;
+
+    console.log("[Push Subscribe] Requete recue:", { type, tokenLength: token?.length });
 
     if (!token || typeof token !== "string") {
       return NextResponse.json({ error: "Token requis" }, { status: 400 });
@@ -22,6 +22,7 @@ export async function POST(request: NextRequest) {
     if (type === "admin") {
       const session = await auth();
       if (!session?.user?.id) {
+        console.warn("[Push Subscribe] Session admin invalide");
         return NextResponse.json({ error: "Non autorise" }, { status: 401 });
       }
       userId = session.user.id;
@@ -42,6 +43,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    console.log("[Push Subscribe] Token enregistre avec succes pour", type);
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("[Push Subscribe] Erreur:", error);

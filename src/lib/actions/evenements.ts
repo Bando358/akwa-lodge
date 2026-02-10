@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { EvenementType } from "@prisma/client";
 import { logActivity } from "@/lib/activity-log";
+import { requireAdmin } from "@/lib/auth";
 
 // Schéma de validation pour les événements
 const evenementSchema = z.object({
@@ -208,6 +209,11 @@ export async function updateEvenement(id: string, data: Partial<EvenementInput>)
 // Supprimer un événement
 export async function deleteEvenement(id: string) {
   try {
+    const adminCheck = await requireAdmin();
+    if (!adminCheck.authorized) {
+      return { success: false, error: adminCheck.error };
+    }
+
     await prisma.evenement.delete({
       where: { id },
     });

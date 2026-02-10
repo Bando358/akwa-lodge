@@ -6,6 +6,7 @@ import { z } from "zod";
 import { MediaType, AnnonceCible, AnnoncePosition } from "@prisma/client";
 import { logActivity } from "@/lib/activity-log";
 import { sendPushToVisitors } from "@/lib/push";
+import { requireAdmin } from "@/lib/auth";
 
 // Schéma de validation pour les annonces
 const annonceSchema = z.object({
@@ -223,6 +224,11 @@ export async function updateAnnonce(id: string, data: Partial<AnnonceInput>) {
 // Supprimer une annonce
 export async function deleteAnnonce(id: string) {
   try {
+    const adminCheck = await requireAdmin();
+    if (!adminCheck.authorized) {
+      return { success: false, error: adminCheck.error };
+    }
+
     await prisma.annonce.delete({
       where: { id },
     });

@@ -7,6 +7,7 @@ import { notifyNewNewsletter } from "@/lib/mail";
 import { notifyWhatsAppNewNewsletter } from "@/lib/whatsapp";
 import { logActivity } from "@/lib/activity-log";
 import { sendPushToAdmins } from "@/lib/push";
+import { requireAdmin } from "@/lib/auth";
 
 // Schéma de validation pour les abonnés newsletter
 const newsletterSchema = z.object({
@@ -138,6 +139,11 @@ export async function unsubscribeNewsletter(email: string) {
 // Supprimer un abonné
 export async function deleteNewsletterSubscriber(id: string) {
   try {
+    const adminCheck = await requireAdmin();
+    if (!adminCheck.authorized) {
+      return { success: false, error: adminCheck.error };
+    }
+
     await prisma.newsletter.delete({
       where: { id },
     });
@@ -156,6 +162,11 @@ export async function deleteNewsletterSubscriber(id: string) {
 // Supprimer plusieurs abonnés
 export async function deleteNewsletterSubscribers(ids: string[]) {
   try {
+    const adminCheck = await requireAdmin();
+    if (!adminCheck.authorized) {
+      return { success: false, error: adminCheck.error };
+    }
+
     await prisma.newsletter.deleteMany({
       where: { id: { in: ids } },
     });

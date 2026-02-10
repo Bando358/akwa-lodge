@@ -7,6 +7,7 @@ import { notifyNewContact } from "@/lib/mail";
 import { notifyWhatsAppNewContact } from "@/lib/whatsapp";
 import { logActivity } from "@/lib/activity-log";
 import { sendPushToAdmins } from "@/lib/push";
+import { requireAdmin } from "@/lib/auth";
 
 // Schéma de validation pour les contacts
 const contactSchema = z.object({
@@ -146,6 +147,11 @@ export async function archiveContact(id: string) {
 // Supprimer un contact
 export async function deleteContact(id: string) {
   try {
+    const adminCheck = await requireAdmin();
+    if (!adminCheck.authorized) {
+      return { success: false, error: adminCheck.error };
+    }
+
     await prisma.contact.delete({
       where: { id },
     });

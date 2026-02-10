@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
 import Image from "next/image";
 import { Images, Plus, Trash2, Star, StarOff, Loader2, Upload, Pencil, Eye, AlertTriangle, CheckCircle, Trash } from "lucide-react";
 import { toast } from "sonner";
@@ -90,6 +91,8 @@ function getCategoryLabel(value: string | null): string {
 }
 
 export default function GaleriePage() {
+  const { data: session } = useSession();
+  const isAdmin = session?.user?.role === "ADMIN";
   const [images, setImages] = useState<ImageType[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
@@ -511,7 +514,7 @@ export default function GaleriePage() {
                   ))}
                 </SelectContent>
               </Select>
-              {selectedImages.length > 0 && (
+              {isAdmin && selectedImages.length > 0 && (
                 <Button
                   variant="destructive"
                   size="sm"
@@ -893,7 +896,7 @@ export default function GaleriePage() {
             <Button variant="outline" onClick={() => setShowCleanupDialog(false)}>
               Fermer
             </Button>
-            {invalidImagesData && invalidImagesData.invalid > 0 && (
+            {isAdmin && invalidImagesData && invalidImagesData.invalid > 0 && (
               <Button
                 variant="destructive"
                 onClick={handleCleanupImages}

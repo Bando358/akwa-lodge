@@ -1,5 +1,6 @@
 import { UtensilsCrossed, FolderOpen, Soup } from "lucide-react";
 import { getMenuCategories, getPlats } from "@/lib/actions/menu";
+import { getUserRole } from "@/lib/auth";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Card,
@@ -12,9 +13,10 @@ import { CategoriesTable } from "./categories-table";
 import { PlatsTable } from "./plats-table";
 
 export default async function MenuPage() {
-  const [categoriesResult, platsResult] = await Promise.all([
+  const [categoriesResult, platsResult, userRole] = await Promise.all([
     getMenuCategories({ includePlats: true }),
     getPlats(),
+    getUserRole(),
   ]);
 
   const categories = categoriesResult.success ? categoriesResult.data : [];
@@ -100,6 +102,7 @@ export default async function MenuPage() {
               <PlatsTable
                 plats={serializedPlats}
                 categories={categories || []}
+                userRole={userRole ?? undefined}
               />
             </CardContent>
           </Card>
@@ -114,7 +117,7 @@ export default async function MenuPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <CategoriesTable categories={categories || []} />
+              <CategoriesTable categories={categories || []} userRole={userRole ?? undefined} />
             </CardContent>
           </Card>
         </TabsContent>

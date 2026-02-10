@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { ServiceType } from "@prisma/client";
 import { logActivity } from "@/lib/activity-log";
+import { requireAdmin } from "@/lib/auth";
 
 // Schéma de validation pour les services
 const serviceSchema = z.object({
@@ -203,6 +204,11 @@ export async function updateService(id: string, data: Partial<ServiceInput>) {
 // Supprimer un service
 export async function deleteService(id: string) {
   try {
+    const adminCheck = await requireAdmin();
+    if (!adminCheck.authorized) {
+      return { success: false, error: adminCheck.error };
+    }
+
     await prisma.service.delete({
       where: { id },
     });

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { logActivity } from "@/lib/activity-log";
+import { requireAdmin } from "@/lib/auth";
 
 // Schéma de validation pour les chambres
 const chambreSchema = z.object({
@@ -234,6 +235,11 @@ export async function updateChambre(id: string, data: Partial<ChambreInput>) {
 // Supprimer une chambre
 export async function deleteChambre(id: string) {
   try {
+    const adminCheck = await requireAdmin();
+    if (!adminCheck.authorized) {
+      return { success: false, error: adminCheck.error };
+    }
+
     await prisma.chambre.delete({
       where: { id },
     });

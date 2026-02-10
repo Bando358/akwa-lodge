@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { logActivity } from "@/lib/activity-log";
+import { requireAdmin } from "@/lib/auth";
 
 // Schéma de validation pour les témoignages
 const temoignageSchema = z.object({
@@ -115,6 +116,11 @@ export async function updateTemoignage(id: string, data: Partial<TemoignageInput
 // Supprimer un témoignage
 export async function deleteTemoignage(id: string) {
   try {
+    const adminCheck = await requireAdmin();
+    if (!adminCheck.authorized) {
+      return { success: false, error: adminCheck.error };
+    }
+
     await prisma.temoignage.delete({
       where: { id },
     });
